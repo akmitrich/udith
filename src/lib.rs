@@ -1,5 +1,6 @@
-use std::{net::SocketAddr, sync::Arc};
+pub mod message;
 
+use std::{net::SocketAddr, sync::Arc};
 use tokio::net::UdpSocket;
 
 pub async fn run(socket: UdpSocket) {
@@ -12,7 +13,11 @@ async fn listen(sock: Arc<UdpSocket>) -> Result<(), anyhow::Error> {
     loop {
         let (len, addr) = sock.recv_from(&mut buf).await?;
         println!("{:?} bytes received from {:?}", len, addr);
-        let packet_handler = handle(Arc::clone(&sock), buf[..len].to_vec(), addr);
+        let packet_handler = handle(
+            Arc::clone(&sock),
+            message::Raw::new(buf[..len].to_vec()),
+            addr,
+        );
         tokio::spawn(async move {
             packet_handler
                 .await
@@ -23,10 +28,10 @@ async fn listen(sock: Arc<UdpSocket>) -> Result<(), anyhow::Error> {
 
 async fn handle(
     sock: Arc<UdpSocket>,
-    packet: Vec<u8>,
+    packet: message::Raw,
     from: SocketAddr,
 ) -> Result<(), anyhow::Error> {
-    let data = std::str::from_utf8(&packet);
+    let data = packet.try_as_str();
     println!("Received {} bytes: {:?}", packet.len(), data);
     if let Ok(msg) = data {
         println!("{}", msg);

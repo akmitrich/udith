@@ -5,6 +5,8 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1"
+bstr = "1"
+fluent-uri = "0.1"
 tokio = { version = "1", features = [
     "rt-multi-thread",
     "macros",
