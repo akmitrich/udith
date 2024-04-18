@@ -1,6 +1,6 @@
 use bstr::ByteSlice;
 
-use super::{Method, CRLF};
+use super::{Method, StatusCode, CRLF};
 
 pub struct RequestLine<'raw> {
     pub method: Method,
@@ -8,7 +8,7 @@ pub struct RequestLine<'raw> {
 }
 
 pub struct StatusLine<'raw> {
-    pub status_code: u16,
+    pub status_code: StatusCode,
     pub reason_phrase: &'raw [u8],
 }
 
@@ -54,12 +54,11 @@ impl<'a> StatusLine<'a> {
                 version
             )));
         }
-        let status_code = std::str::from_utf8(
+        let status_code = StatusCode::try_from(
             splitted
                 .next()
                 .ok_or_else(|| anyhow::Error::msg("No status code found in status-line"))?,
-        )?
-        .parse()?;
+        )?;
         let reason_phrase = splitted.next().unwrap_or_default();
         Ok(Self {
             status_code,

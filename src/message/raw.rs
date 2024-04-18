@@ -1,11 +1,12 @@
 use std::ops::Deref;
 
 pub struct Raw {
-    data: Vec<u8>,
+    data: Box<[u8]>,
 }
 
 impl Raw {
     pub fn new(data: Vec<u8>) -> Self {
+        let data = data.into_boxed_slice();
         Self { data }
     }
 
@@ -24,8 +25,8 @@ impl Deref for Raw {
 
 #[cfg(test)]
 mod tests {
-    use bstr::ByteSlice;
     use crate::message::CRLF;
+    use bstr::ByteSlice;
 
     #[test]
     fn it_works() {
