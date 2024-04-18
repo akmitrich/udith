@@ -31,5 +31,6 @@ async fn handle(
     if let Ok(msg) = data {
         println!("{}", msg);
     }
+    sock.send_to(b"OK", from).await?;
     Ok(())
 }
