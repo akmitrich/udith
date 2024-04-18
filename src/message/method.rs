@@ -15,3 +15,10 @@ impl TryFrom<&[u8]> for Method {
         }
     }
 }
+
+pub(crate) fn try_to_take_method(splitted: &mut bstr::Split) -> Result<Method, anyhow::Error> {
+    let method_str = splitted
+        .next()
+        .ok_or_else(|| anyhow::Error::msg("No method found in request-line"))?;
+    Method::try_from(method_str)
+}

@@ -1,6 +1,6 @@
 use bstr::ByteSlice;
 
-use super::{Method, StatusCode, CRLF};
+use super::{try_to_take_method, try_to_take_status_code, Method, StatusCode, CRLF};
 
 pub struct RequestLine<'raw> {
     pub method: Method,
@@ -18,11 +18,7 @@ impl<'a> RequestLine<'a> {
             return Err(anyhow::Error::msg("Request line cannot contain CRLF."));
         }
         let mut splitted = raw.split_str(b" ");
-        let method = Method::try_from(
-            splitted
-                .next()
-                .ok_or_else(|| anyhow::Error::msg("No method found in request-line"))?,
-        )?;
+        let method = try_to_take_method(&mut splitted)?;
         let uri = splitted
             .next()
             .ok_or_else(|| anyhow::Error::msg("No URI found in request-line"))?;
@@ -54,17 +50,22 @@ impl<'a> StatusLine<'a> {
                 version
             )));
         }
-        let status_code = StatusCode::try_from(
-            splitted
-                .next()
-                .ok_or_else(|| anyhow::Error::msg("No status code found in status-line"))?,
-        )?;
+        let status_code = try_to_take_status_code(&mut splitted)?;
         let reason_phrase = splitted.next().unwrap_or_default();
         Ok(Self {
             status_code,
             reason_phrase,
         })
     }
+}
+
+pub(super) fn try_to_take_request_line<'a>(
+    lines: &mut bstr::Split<'a, 'a>,
+) -> Result<RequestLine<'a>, anyhow::Error> {
+    let line = lines
+        .next()
+        .ok_or_else(|| anyhow::Error::msg("No request-line found"))?;
+    RequestLine::parse(line)
 }
 
 #[cfg(test)]

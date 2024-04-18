@@ -18,6 +18,15 @@ impl From<StatusCode> for u16 {
     }
 }
 
+pub(crate) fn try_to_take_status_code(
+    splitted: &mut bstr::Split,
+) -> Result<StatusCode, anyhow::Error> {
+    let status_code_str = splitted
+        .next()
+        .ok_or_else(|| anyhow::Error::msg("No status code found in status-line"))?;
+    StatusCode::try_from(status_code_str)
+}
+
 mod tests {
     use super::*;
 
