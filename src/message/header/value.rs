@@ -1,3 +1,3 @@
-pub struct HeaderValue<'raw> {
-    lines: Vec<&'raw [u8]>,
+pub struct HeaderValue {
+    lines: Box<[u8]>,
 }

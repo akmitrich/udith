@@ -1,3 +1,7 @@
+use nom::IResult;
+
+use super::SP;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Method {
     Invite,
@@ -12,6 +16,19 @@ impl TryFrom<&[u8]> for Method {
         match s {
             "INVITE" => Ok(Self::Invite),
             _ => Ok(Self::Unknown),
+        }
+    }
+}
+
+impl Method {
+    pub fn parse(src: &[u8]) -> IResult<&[u8], Self> {
+        let (rest, method_name) = nom::bytes::complete::take_until(SP)(src)?;
+        match Self::try_from(method_name) {
+            Ok(method) => Ok((rest, method)),
+            Err(_) => Err(nom::Err::Error(nom::error::make_error(
+                src,
+                nom::error::ErrorKind::Fail,
+            ))),
         }
     }
 }

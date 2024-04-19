@@ -1,4 +1,4 @@
-use nom::{error::make_error, IResult};
+use nom::IResult;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct StatusCode {
@@ -23,24 +23,14 @@ impl From<StatusCode> for u16 {
 
 impl StatusCode {
     pub fn parse(src: &[u8]) -> IResult<&[u8], Self> {
-        for (i, c) in src.iter().copied().enumerate() {
-            match char::from(c) {
-                x if x.is_ascii_digit() => {}
-                ' ' => {
-                    if i > 0 {
-                        let code = Self::try_from(&src[..i]).unwrap();
-                        return Ok((&src[i + 1..], code));
-                    } else {
-                        break;
-                    }
-                }
-                _ => break,
-            }
+        let (rest, digits) = nom::bytes::complete::take_while(|t: u8| t.is_ascii_digit())(src)?;
+        match Self::try_from(digits) {
+            Ok(code) => Ok((rest, code)),
+            Err(_) => Err(nom::Err::Error(nom::error::make_error(
+                src,
+                nom::error::ErrorKind::Fail,
+            ))),
         }
-        Err(nom::Err::Error(make_error(
-            src,
-            nom::error::ErrorKind::Fail,
-        )))
     }
 }
 

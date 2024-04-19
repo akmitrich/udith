@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1"
-bstr = "1"
 fluent-uri = "0.1"
 nom = "7"
 ouroboros = "0.18"
