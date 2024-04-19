@@ -13,11 +13,7 @@ async fn listen(sock: Arc<UdpSocket>) -> Result<(), anyhow::Error> {
     loop {
         let (len, addr) = sock.recv_from(&mut buf).await?;
         println!("{:?} bytes received from {:?}", len, addr);
-        let packet_handler = handle(
-            Arc::clone(&sock),
-            message::Raw::new(buf[..len].to_vec()),
-            addr,
-        );
+        let packet_handler = handle(Arc::clone(&sock), message::Raw::new(&buf[..len]), addr);
         tokio::spawn(async move {
             packet_handler
                 .await

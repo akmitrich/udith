@@ -7,6 +7,7 @@ edition = "2021"
 anyhow = "1"
 bstr = "1"
 fluent-uri = "0.1"
+nom = "7"
 ouroboros = "0.18"
 tokio = { version = "1", features = [
     "rt-multi-thread",

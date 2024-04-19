@@ -1,3 +1,5 @@
+use nom::{error::make_error, IResult};
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct StatusCode {
     inner: u16,
@@ -19,15 +21,30 @@ impl From<StatusCode> for u16 {
     }
 }
 
-pub(crate) fn try_to_take_status_code(
-    splitted: &mut bstr::Split,
-) -> Result<StatusCode, anyhow::Error> {
-    let status_code_str = splitted
-        .next()
-        .ok_or_else(|| anyhow::Error::msg("No status code found in status-line"))?;
-    StatusCode::try_from(status_code_str)
+impl StatusCode {
+    pub fn parse(src: &[u8]) -> IResult<&[u8], Self> {
+        for (i, c) in src.iter().copied().enumerate() {
+            match char::from(c) {
+                x if x.is_ascii_digit() => {}
+                ' ' => {
+                    if i > 0 {
+                        let code = Self::try_from(&src[..i]).unwrap();
+                        return Ok((&src[i + 1..], code));
+                    } else {
+                        break;
+                    }
+                }
+                _ => break,
+            }
+        }
+        Err(nom::Err::Error(make_error(
+            src,
+            nom::error::ErrorKind::Fail,
+        )))
+    }
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 

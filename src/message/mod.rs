@@ -1,8 +1,11 @@
 mod generic;
+mod header;
 mod method;
 mod raw;
 pub mod start_line;
 mod status_code;
+
+use std::ops::Deref;
 
 pub use generic::*;
 pub use method::*;
@@ -11,7 +14,21 @@ pub use start_line::StartLine;
 pub use status_code::*;
 
 const CRLF: &[u8] = b"\r\n";
+const EMPTY_LINE: &[u8] = b"\r\n\r\n";
 const SIP_VERSION: &[u8] = b"SIP/2.0";
+
+fn parse_sip_message(raw: Raw) {
+    match nom::bytes::complete::tag::<&[u8], &[u8], nom::error::VerboseError<&[u8]>>(SIP_VERSION)(
+        raw.deref(),
+    ) {
+        Ok(x) => println!(
+            "{} --- {}",
+            std::str::from_utf8(x.0).unwrap(),
+            std::str::from_utf8(x.1).unwrap()
+        ),
+        Err(y) => println!("{:?}", y),
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -19,14 +36,21 @@ mod tests {
 
     #[test]
     fn create_request_message() {
-        let data = b"INVITE sip:127.0.0.1:5060 SIP/2.0\r\nVia: SIP/2.0/UDP 127.0.0.1:40675;rport;branch=z9hG4bK7rmHHX13H1N3e\r\nMax-Forwards: 50\r\nFrom: <sip:127.0.0.1:40675>;tag=7m5yaggg50pKc\r\nTo: <sip:127.0.0.1:5060>\r\nCall-ID: b4e3ef6e-7802-123d-568f-c01803268e70\r\nCSeq: 980604667 INVITE\r\nContact: <sip:127.0.0.1:40675;transport=udp>\r\nUser-Agent: Udith Client 0.0.0\r\nAllow: INVITE, ACK, BYE, CANCEL, OPTIONS, PRACK, MESSAGE, SUBSCRIBE, NOTIFY, REFER, UPDATE\r\nSupported: timer, 100rel\r\nContent-Type: application/sdp\r\nContent-Disposition: session\r\nContent-Length: 398\r\n\r\nv=0\r\no=UniMRCPClient 5074391966795348619 3411008761561041293 IN IP4 192.168.50.157\r\ns=-\r\nc=IN IP4 127.0.1.1\r\nt=0 0\r\nm=application 9 TCP/MRCPv2 1\r\na=setup:active\r\na=connection:new\r\na=resource:speechrecog\r\na=cmid:1\r\nm=audio 4000 RTP/AVP 0 8 96 101\r\na=rtpmap:0 PCMU/8000\r\na=rtpmap:8 PCMA/8000\r\na=rtpmap:96 L16/8000\r\na=rtpmap:101 telephone-event/8000\r\na=fmtp:101 0-15\r\na=sendonly\r\na=ptime:20\r\na=mid:1\r\n".to_vec();
+        let data = b"INVITE sip:127.0.0.1:5060 SIP/2.0\r\nVia: SIP/2.0/UDP 127.0.0.1:40675;rport;branch=z9hG4bK7rmHHX13H1N3e\r\nMax-Forwards: 50\r\nFrom: <sip:127.0.0.1:40675>;tag=7m5yaggg50pKc\r\nTo: <sip:127.0.0.1:5060>\r\nCall-ID: b4e3ef6e-7802-123d-568f-c01803268e70\r\nCSeq: 980604667 INVITE\r\nContact: <sip:127.0.0.1:40675;transport=udp>\r\nUser-Agent: Udith Client 0.0.0\r\nAllow: INVITE, ACK, BYE, CANCEL, OPTIONS, PRACK, MESSAGE, SUBSCRIBE, NOTIFY, REFER, UPDATE\r\nSupported: timer, 100rel\r\nContent-Type: application/sdp\r\nContent-Disposition: session\r\nContent-Length: 398\r\n\r\nv=0\r\no=UniMRCPClient 5074391966795348619 3411008761561041293 IN IP4 192.168.50.157\r\ns=-\r\nc=IN IP4 127.0.1.1\r\nt=0 0\r\nm=application 9 TCP/MRCPv2 1\r\na=setup:active\r\na=connection:new\r\na=resource:speechrecog\r\na=cmid:1\r\nm=audio 4000 RTP/AVP 0 8 96 101\r\na=rtpmap:0 PCMU/8000\r\na=rtpmap:8 PCMA/8000\r\na=rtpmap:96 L16/8000\r\na=rtpmap:101 telephone-event/8000\r\na=fmtp:101 0-15\r\na=sendonly\r\na=ptime:20\r\na=mid:1\r\n";
         let raw = Raw::new(data);
-        let req = Message::try_from(&raw).unwrap();
-        assert!(req.start_line.is_request());
-        let StartLine::Request(request_line) = &req.start_line else {
+        let request = Message::try_from(&raw).unwrap();
+        assert!(request.start_line.is_request());
+        let StartLine::Request(request_line) = &request.start_line else {
             unreachable!()
         };
         assert_eq!(Method::Invite, request_line.method);
-        assert_eq!(b"sip:127.0.0.1:5060", request_line.uri);
+        assert_eq!(b"sip:127.0.0.1:5060", request_line.uri.as_ref());
+    }
+
+    #[test]
+    fn make_nom() {
+        let data = b"SIP/2.0INVITE sip:127.0.0.1:5060 SIP/2.0\r\nVia: SIP/2.0/UDP 127.0.0.1:40675;rport;branch=z9hG4bK7rmHHX13H1N3e\r\nMax-Forwards: 50\r\nFrom: <sip:127.0.0.1:40675>;tag=7m5yaggg50pKc\r\nTo: <sip:127.0.0.1:5060>\r\nCall-ID: b4e3ef6e-7802-123d-568f-c01803268e70\r\nCSeq: 980604667 INVITE\r\nContact: <sip:127.0.0.1:40675;transport=udp>\r\nUser-Agent: Udith Client 0.0.0\r\nAllow: INVITE, ACK, BYE, CANCEL, OPTIONS, PRACK, MESSAGE, SUBSCRIBE, NOTIFY, REFER, UPDATE\r\nSupported: timer, 100rel\r\nContent-Type: application/sdp\r\nContent-Disposition: session\r\nContent-Length: 398\r\n\r\nv=0\r\no=UniMRCPClient 5074391966795348619 3411008761561041293 IN IP4 192.168.50.157\r\ns=-\r\nc=IN IP4 127.0.1.1\r\nt=0 0\r\nm=application 9 TCP/MRCPv2 1\r\na=setup:active\r\na=connection:new\r\na=resource:speechrecog\r\na=cmid:1\r\nm=audio 4000 RTP/AVP 0 8 96 101\r\na=rtpmap:0 PCMU/8000\r\na=rtpmap:8 PCMA/8000\r\na=rtpmap:96 L16/8000\r\na=rtpmap:101 telephone-event/8000\r\na=fmtp:101 0-15\r\na=sendonly\r\na=ptime:20\r\na=mid:1\r\n";
+        let raw = Raw::new(data);
+        parse_sip_message(raw);
     }
 }

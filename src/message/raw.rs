@@ -5,8 +5,8 @@ pub struct Raw {
 }
 
 impl Raw {
-    pub fn new(data: Vec<u8>) -> Self {
-        let data = data.into_boxed_slice();
+    pub fn new(data: &[u8]) -> Self {
+        let data = data.to_vec().into_boxed_slice();
         Self { data }
     }
 
