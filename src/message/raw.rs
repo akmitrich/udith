@@ -22,18 +22,3 @@ impl Deref for Raw {
         self.data.as_ref()
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use crate::message::CRLF;
-    use bstr::ByteSlice;
-
-    #[test]
-    fn it_works() {
-        let a = "Мама\r\nмыла\r\nраму\r\n\r\nBody is here".as_bytes();
-        let s = a.split_str(CRLF);
-        for l in s {
-            println!("{:?} -> {}", l, std::str::from_utf8(l).unwrap());
-        }
-    }
-}
