@@ -1,4 +1,5 @@
 pub mod message;
+pub mod parse_utils;
 
 use std::{net::SocketAddr, sync::Arc};
 use tokio::net::UdpSocket;

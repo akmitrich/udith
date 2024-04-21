@@ -1,5 +1,5 @@
-use super::value::HeaderValue;
+use super::Value;
 
 pub struct HeaderMap {
-    entries: Vec<HeaderValue>,
+    entries: Vec<Value>,
 }

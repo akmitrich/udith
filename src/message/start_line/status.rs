@@ -1,6 +1,7 @@
 use nom::{bytes::complete::tag, IResult};
 
-use crate::message::{StatusCode, CRLF, SIP_VERSION};
+use crate::message::StatusCode;
+use crate::parse_utils::{CRLF, SIP_VERSION, SP};
 
 pub struct StatusLine {
     pub status_code: StatusCode,
@@ -8,23 +9,19 @@ pub struct StatusLine {
 }
 impl StatusLine {
     pub fn parse(src: &[u8]) -> IResult<&[u8], Self> {
-        let (src, _) = tag(SIP_VERSION)(src)?;
-        let (src, status_code) =
-            nom::sequence::delimited(tag(b" "), StatusCode::parse, tag(b" "))(src)?;
-        let (src, phrase) = parse_phrase(src)?;
-        let (src, _) = tag(CRLF)(src)?;
-        Ok((
-            src,
-            StatusLine {
+        nom::combinator::map(
+            nom::sequence::tuple((
+                tag(SIP_VERSION),
+                nom::sequence::delimited(tag(SP), StatusCode::parse, tag(SP)),
+                nom::bytes::complete::take_until(CRLF),
+                tag(CRLF),
+            )),
+            |(_, status_code, phrase, _)| Self {
                 status_code,
                 reason_phrase: phrase.to_vec().into_boxed_slice(),
             },
-        ))
+        )(src)
     }
-}
-
-fn parse_phrase(src: &[u8]) -> IResult<&[u8], &[u8]> {
-    nom::bytes::complete::take_until(CRLF)(src)
 }
 
 #[cfg(test)]

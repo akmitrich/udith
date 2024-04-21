@@ -1,6 +1,6 @@
 use nom::IResult;
 
-use super::SP;
+use crate::parse_utils::IsSipToken;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Method {
@@ -22,7 +22,7 @@ impl TryFrom<&[u8]> for Method {
 
 impl Method {
     pub fn parse(src: &[u8]) -> IResult<&[u8], Self> {
-        let (rest, method_name) = nom::bytes::complete::take_until(SP)(src)?;
+        let (rest, method_name) = nom::bytes::complete::take_while(|x: u8| x.is_sip_token())(src)?;
         match Self::try_from(method_name) {
             Ok(method) => Ok((rest, method)),
             Err(_) => Err(nom::Err::Error(nom::error::make_error(

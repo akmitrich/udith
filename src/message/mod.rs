@@ -11,11 +11,6 @@ pub use raw::*;
 pub use start_line::StartLine;
 pub use status_code::*;
 
-const SP: &[u8] = b" ";
-const CRLF: &[u8] = b"\r\n";
-// const EMPTY_LINE: &[u8] = b"\r\n\r\n";
-const SIP_VERSION: &[u8] = b"SIP/2.0";
-
 #[cfg(test)]
 mod tests {
     use super::*;

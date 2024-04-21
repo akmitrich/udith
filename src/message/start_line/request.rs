@@ -1,6 +1,9 @@
 use nom::{bytes::complete::tag, IResult};
 
-use crate::message::{Method, CRLF, SIP_VERSION, SP};
+use crate::{
+    message::Method,
+    parse_utils::{CRLF, SIP_VERSION, SP},
+};
 
 pub struct RequestLine {
     pub method: Method,
@@ -9,18 +12,19 @@ pub struct RequestLine {
 
 impl RequestLine {
     pub fn parse(src: &[u8]) -> IResult<&[u8], Self> {
-        let (src, method) = Method::parse(src)?;
-        let (src, uri) =
-            nom::sequence::delimited(tag(SP), nom::bytes::complete::take_until(SP), tag(SP))(src)?;
-        let (src, _) = tag(SIP_VERSION)(src)?;
-        let (src, _) = tag(CRLF)(src)?;
-        Ok((
-            src,
-            Self {
+        // Request-Line  =  Method SP Request-URI SP SIP-Version CRLF
+        nom::combinator::map(
+            nom::sequence::tuple((
+                Method::parse,
+                nom::sequence::delimited(tag(SP), nom::bytes::complete::take_until(SP), tag(SP)),
+                tag(SIP_VERSION),
+                tag(CRLF),
+            )),
+            |(method, uri, _, _)| Self {
                 method,
                 uri: uri.to_vec().into_boxed_slice(),
             },
-        ))
+        )(src)
     }
 }
 
