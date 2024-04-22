@@ -20,6 +20,25 @@ impl Value {
     }
 }
 
+impl TryFrom<&Value> for String {
+    type Error = ();
+
+    fn try_from(value: &Value) -> Result<Self, Self::Error> {
+        std::str::from_utf8(value.raw.as_ref())
+            .map(ToOwned::to_owned)
+            .map_err(|_| {})
+    }
+}
+
+impl TryFrom<&Value> for usize {
+    type Error = ();
+
+    fn try_from(value: &Value) -> Result<Self, Self::Error> {
+        let s: &str = std::str::from_utf8(value.raw.as_ref()).map_err(|_| {})?;
+        s.parse().map_err(|_| {})
+    }
+}
+
 impl std::fmt::Debug for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", std::str::from_utf8(self.raw.as_ref()))

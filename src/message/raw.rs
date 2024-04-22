@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 pub struct Raw {
-    data: Box<[u8]>,
+    pub data: Box<[u8]>,
 }
 
 impl Raw {
