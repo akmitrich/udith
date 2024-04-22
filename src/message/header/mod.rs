@@ -2,16 +2,9 @@ pub mod map;
 pub mod name;
 pub mod value;
 
-use crate::parse_utils::{hcolon, IsSipToken, CRLF, SIP_VERSION, SP};
 pub use map::*;
 pub use name::*;
-use nom::{
-    bytes::complete::tag,
-    character::complete::{space0, space1},
-    multi::many_m_n,
-    sequence::tuple,
-    IResult,
-};
+
 pub use value::*;
 
 #[cfg(test)]
@@ -25,7 +18,7 @@ mod tests {
             panic!()
         };
         println!("Name: {:?}", name);
-        let (src, _) = hcolon(src).unwrap();
+        let (src, _) = crate::parse_utils::hcolon(src).unwrap();
         println!("Left: {:?}", std::str::from_utf8(src),);
     }
 }
