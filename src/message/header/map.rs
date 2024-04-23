@@ -85,6 +85,13 @@ impl Map {
             .and_then(|i| self.entries.get(*i))
     }
 
+    fn get_many(&self, name: &str) -> Vec<&Header> {
+        self.indice
+            .get(name)
+            .map(|i| i.iter().filter_map(|i| self.entries.get(*i)).collect())
+            .unwrap_or_default()
+    }
+
     fn raw_header_value(&self, header: &str) -> Option<&Value> {
         self.indice
             .get(&header.to_lowercase())

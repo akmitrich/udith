@@ -1,4 +1,4 @@
-use super::Address;
+use super::{Address, Via};
 use crate::{
     message::Method,
     parse_utils::{lws, text_utf8_byte, CRLF},
@@ -6,6 +6,7 @@ use crate::{
 use nom::{IResult, ParseTo};
 
 pub enum Value {
+    Via(Via),
     To(Address),
     From(Address),
     CSeq { num: u32, method: Method },
@@ -27,6 +28,10 @@ impl Value {
 
     pub fn with_name(name: impl AsRef<str>, data: Box<[u8]>) -> Self {
         match name.as_ref().to_lowercase().as_str() {
+            "via" | "v" => match Via::try_from(data) {
+                Ok(via) => Self::Via(via),
+                Err(data) => default_value(data),
+            },
             to_or_from @ ("to" | "t" | "from" | "f") => match Address::try_from(data) {
                 Ok(address) => {
                     if to_or_from.starts_with('t') {
@@ -71,6 +76,7 @@ impl TryFrom<&Value> for String {
 
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
+            Value::Via(via) => Err(()),
             Value::To(address) | Value::From(address) => Ok(address.to_string()),
             Value::CSeq { num, method } => Ok(format!("{} {}", num, method.to_string())),
             Value::CallId(id) => std::str::from_utf8(id)
@@ -101,6 +107,7 @@ impl TryFrom<&Value> for usize {
 impl std::fmt::Debug for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Via(via) => write!(f, "VIA"),
             Self::To(address) | Self::From(address) => write!(f, "{:?}", address),
             Self::CSeq { num, method } => write!(f, "{} {:?}", num, method),
             Self::CallId(id) => write!(f, "{}", std::str::from_utf8(id).unwrap_or("BAD ID")),

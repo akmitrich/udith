@@ -2,11 +2,13 @@ mod address;
 mod map;
 mod name;
 mod value;
+mod via;
 
 pub use address::*;
 pub use map::Map;
 pub use name::*;
 pub use value::*;
+pub use via::*;
 
 use crate::parse_utils::hcolon;
 use nom::IResult;
