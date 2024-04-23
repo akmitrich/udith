@@ -1,20 +1,12 @@
 mod address;
-mod call_id;
-mod cseq;
 mod map;
-mod max_forwards;
 mod name;
 mod value;
-mod via;
 
 pub use address::*;
-pub use call_id::*;
-pub use cseq::*;
-pub use map::*;
-pub use max_forwards::*;
+pub use map::Map;
 pub use name::*;
 pub use value::*;
-pub use via::*;
 
 use crate::parse_utils::hcolon;
 use nom::IResult;
@@ -31,6 +23,7 @@ impl Header {
         if let Some(name) = name {
             let (rest, _) = hcolon(remainder)?;
             let (rest, value) = Value::parse(rest)?;
+            let value = Value::with_name(&name, value);
             Ok((rest, Some(Self { name, value })))
         } else {
             Ok((remainder, None))

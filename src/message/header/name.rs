@@ -24,6 +24,12 @@ impl Name {
     }
 }
 
+impl AsRef<str> for Name {
+    fn as_ref(&self) -> &str {
+        &self.inner
+    }
+}
+
 impl ToString for Name {
     fn to_string(&self) -> String {
         self.inner.to_owned()
@@ -37,7 +43,7 @@ impl std::fmt::Debug for Name {
 }
 
 #[cfg(test)]
-mod tests{
+mod tests {
     use super::*;
 
     #[test]

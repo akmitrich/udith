@@ -28,7 +28,6 @@ async fn handle(
     packet: message::Raw,
     from: SocketAddr,
 ) -> Result<(), anyhow::Error> {
-    println!("Received {} bytes.", packet.len());
     if let Ok((rest, msg)) = message::Message::parse(&packet) {
         println!("{}\n{:#?}", msg.start_line, msg.headers.sip_sweet_six());
         println!("Message parsed until: {:?}", std::str::from_utf8(rest));

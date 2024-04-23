@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use nom::IResult;
 
-use super::{Address, Header, Value};
+use super::{Header, Value};
 
 #[derive(Debug)]
 pub struct Map {
@@ -40,27 +40,39 @@ impl Map {
             .and_then(|content_length| content_length.try_into().ok())
     }
 
-    pub fn to(&self) -> Option<Address> {
-        self.get("to")
-            .or_else(|| self.get("t"))
-            .and_then(|h| h.try_into().ok())
+    pub fn via(&self) -> Option<&Header> {
+        self.get("via")
     }
 
-    pub fn from(&self) -> Option<Address> {
-        self.get("from")
-            .or_else(|| self.get("f"))
-            .and_then(|h| h.try_into().ok())
+    pub fn to(&self) -> Option<&Header> {
+        self.get("to").or_else(|| self.get("t"))
+    }
+
+    pub fn from(&self) -> Option<&Header> {
+        self.get("from").or_else(|| self.get("f"))
+    }
+
+    pub fn cseq(&self) -> Option<&Header> {
+        self.get("cseq")
+    }
+
+    pub fn call_id(&self) -> Option<&Header> {
+        self.get("call-id")
+    }
+
+    pub fn max_forwards(&self) -> Option<&Header> {
+        self.get("max-forwards")
     }
 
     // header fields: To, From, CSeq, Call-ID, Max-Forwards, and Via;
     // all of these are mandatory in all SIP requests
-    pub fn sip_sweet_six(&self) -> Option<(Address, Address, String, String, String, String)> {
+    pub fn sip_sweet_six(&self) -> Option<(&Header, &Header, &Header, &Header, &Header, &Header)> {
         let to = self.to()?;
         let from = self.from()?;
-        let cseq = self.raw_header_value("cseq")?.try_into().ok()?;
-        let callid = self.raw_header_value("call-id")?.try_into().ok()?;
-        let max = self.raw_header_value("max-forwards")?.try_into().ok()?;
-        let via = self.raw_header_value("via")?.try_into().ok()?;
+        let cseq = self.cseq()?;
+        let callid = self.call_id()?;
+        let max = self.max_forwards()?;
+        let via = self.via()?;
         Some((to, from, cseq, callid, max, via))
     }
 }
