@@ -30,6 +30,19 @@ impl StartLine {
     }
 }
 
+impl std::fmt::Display for StartLine {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                StartLine::Request(r) => r.to_string(),
+                StartLine::Status(s) => s.to_string(),
+            }
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

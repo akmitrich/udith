@@ -24,6 +24,18 @@ impl StatusLine {
     }
 }
 
+impl std::fmt::Display for StatusLine {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let status_code: u16 = self.status_code.into();
+        write!(
+            f,
+            "SIP/2.0 {} {}",
+            status_code,
+            std::str::from_utf8(&self.reason_phrase).unwrap()
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

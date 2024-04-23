@@ -32,3 +32,13 @@ impl Method {
         }
     }
 }
+
+impl ToString for Method {
+    fn to_string(&self) -> String {
+        match self {
+            Method::Invite => "INVITE",
+            Method::Unknown => "Unknown",
+        }
+        .to_owned()
+    }
+}

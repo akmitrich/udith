@@ -11,6 +11,8 @@ pub struct Map {
 }
 
 impl Map {
+    // header fields: To, From, CSeq, Call-ID, Max-Forwards, and Via;
+    // all of these are mandatory in all SIP requests
     pub fn parse(src: &[u8]) -> IResult<&[u8], Self> {
         let mut parsed_map = Map {
             indice: HashMap::new(),

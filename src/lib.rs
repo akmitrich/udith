@@ -28,10 +28,10 @@ async fn handle(
     packet: message::Raw,
     from: SocketAddr,
 ) -> Result<(), anyhow::Error> {
-    let data = packet.try_as_str();
-    println!("Received {} bytes: {:?}", packet.len(), data);
-    if let Ok(msg) = data {
-        println!("{}", msg);
+    println!("Received {} bytes.", packet.len());
+    if let Ok((rest, msg)) = message::Message::parse(&packet) {
+        println!("{}\n{:#?}", msg.start_line, msg.headers);
+        println!("Message parsed until: {:?}", std::str::from_utf8(rest));
     }
     sock.send_to(b"OK", from).await?;
     Ok(())

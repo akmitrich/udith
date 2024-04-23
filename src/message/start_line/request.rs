@@ -28,6 +28,17 @@ impl RequestLine {
     }
 }
 
+impl std::fmt::Display for RequestLine {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} {} SIP/2.0",
+            self.method.to_string(),
+            std::str::from_utf8(&self.uri).unwrap()
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
