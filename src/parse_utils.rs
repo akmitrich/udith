@@ -59,7 +59,7 @@ fn next_non_whitespace(src: &[u8]) -> Option<u8> {
 }
 
 pub trait IsSipToken {
-    /// in SIP RFC token = 1*(alphanum / "-" / "." / "!" / "%" / "*" / "_" / "+" / "`" / "'" / "~" )
+    /// token = 1*(alphanum / "-" / "." / "!" / "%" / "*" / "_" / "+" / "`" / "'" / "~" )
     fn is_sip_token(&self) -> bool;
 }
 

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use nom::IResult;
 
-use super::Header;
+use super::{Address, Header, Value};
 
 #[derive(Debug)]
 pub struct Map {
@@ -11,8 +11,6 @@ pub struct Map {
 }
 
 impl Map {
-    // header fields: To, From, CSeq, Call-ID, Max-Forwards, and Via;
-    // all of these are mandatory in all SIP requests
     pub fn parse(src: &[u8]) -> IResult<&[u8], Self> {
         let mut parsed_map = Map {
             indice: HashMap::new(),
@@ -38,11 +36,49 @@ impl Map {
 
 impl Map {
     pub fn content_length(&self) -> Option<usize> {
-        let content_length_header_index =
-            self.indice.get("content-length").and_then(|i| i.first())?;
-        let content_length_header = self.entries.get(*content_length_header_index)?;
-        let value = &content_length_header.value;
-        value.try_into().ok()
+        self.raw_header_value("content-length")
+            .and_then(|content_length| content_length.try_into().ok())
+    }
+
+    pub fn to(&self) -> Option<Address> {
+        self.get("to")
+            .or_else(|| self.get("t"))
+            .and_then(|h| h.try_into().ok())
+    }
+
+    pub fn from(&self) -> Option<Address> {
+        self.get("from")
+            .or_else(|| self.get("f"))
+            .and_then(|h| h.try_into().ok())
+    }
+
+    // header fields: To, From, CSeq, Call-ID, Max-Forwards, and Via;
+    // all of these are mandatory in all SIP requests
+    pub fn sip_sweet_six(&self) -> Option<(Address, Address, String, String, String, String)> {
+        let to = self.to()?;
+        let from = self.from()?;
+        let cseq = self.raw_header_value("cseq")?.try_into().ok()?;
+        let callid = self.raw_header_value("call-id")?.try_into().ok()?;
+        let max = self.raw_header_value("max-forwards")?.try_into().ok()?;
+        let via = self.raw_header_value("via")?.try_into().ok()?;
+        Some((to, from, cseq, callid, max, via))
+    }
+}
+
+impl Map {
+    fn get(&self, name: &str) -> Option<&Header> {
+        self.indice
+            .get(name)
+            .and_then(|i| i.first())
+            .and_then(|i| self.entries.get(*i))
+    }
+
+    fn raw_header_value(&self, header: &str) -> Option<&Value> {
+        self.indice
+            .get(&header.to_lowercase())
+            .and_then(|i| i.first())
+            .and_then(|i| self.entries.get(*i))
+            .map(|e| &e.value)
     }
 }
 
