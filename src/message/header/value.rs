@@ -9,6 +9,7 @@ pub enum Value {
     To(Address),
     From(Address),
     CSeq { num: u32, method: Method },
+    CallId(Box<[u8]>),
     MaxForwards(usize),
     Raw(Box<[u8]>),
 }
@@ -51,6 +52,7 @@ impl Value {
                     Err(_) => default_value(data),
                 }
             }
+            "call-id" => Self::CallId(data),
             "max-forwards" => match data.as_ref().parse_to() {
                 Some(n) => Self::MaxForwards(n),
                 None => default_value(data),
@@ -71,6 +73,9 @@ impl TryFrom<&Value> for String {
         match value {
             Value::To(address) | Value::From(address) => Ok(address.to_string()),
             Value::CSeq { num, method } => Ok(format!("{} {}", num, method.to_string())),
+            Value::CallId(id) => std::str::from_utf8(id)
+                .map(ToOwned::to_owned)
+                .map_err(|_| {}),
             Value::MaxForwards(n) => Ok(format!("{}", n)),
             Value::Raw(raw) => std::str::from_utf8(raw)
                 .map(ToOwned::to_owned)
@@ -98,6 +103,7 @@ impl std::fmt::Debug for Value {
         match self {
             Self::To(address) | Self::From(address) => write!(f, "{:?}", address),
             Self::CSeq { num, method } => write!(f, "{} {:?}", num, method),
+            Self::CallId(id) => write!(f, "{}", std::str::from_utf8(id).unwrap_or("BAD ID")),
             Self::MaxForwards(n) => write!(f, "{}", n),
             Self::Raw(raw) => write!(f, "{:?}", std::str::from_utf8(raw)),
         }
