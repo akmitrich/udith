@@ -1,0 +1,83 @@
+pub mod hostport;
+pub mod sipuri;
+pub mod transportparam;
+pub mod uriheader;
+pub mod uriparameter;
+pub mod uripart;
+pub mod userinfo;
+pub mod userparam;
+
+use nom::{branch::alt, bytes::complete::tag, IResult};
+use sipuri::SipUri;
+use uripart::UriPart;
+
+#[derive(Debug)]
+pub enum Uri {
+    Sip(SipUri),
+    Sips(SipUri),
+    Absolute { scheme: String, uri: UriPart },
+}
+
+const SIP: &[u8] = b"sip:";
+const SIPS: &[u8] = b"sips:";
+
+impl Uri {
+    pub fn parse(src: &[u8]) -> IResult<&[u8], Self> {
+        let (rest, tag) = alt((tag(SIP), tag(SIPS), parse_scheme))(src)?;
+        match tag {
+            SIP => {
+                let (rest, uri) = SipUri::parse(rest)?;
+                Ok((rest, Self::Sip(uri)))
+            }
+            SIPS => {
+                let (rest, uri) = SipUri::parse(rest)?;
+                Ok((rest, Self::Sips(uri)))
+            }
+            _ => todo!(),
+        }
+    }
+}
+
+fn parse_scheme(src: &[u8]) -> IResult<&[u8], &[u8]> {
+    // scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+    if src.first().map(|c| c.is_ascii_alphabetic()) != Some(true) {
+        return Err(nom::Err::Error(nom::error::make_error(
+            src,
+            nom::error::ErrorKind::Fail,
+        )));
+    }
+    for (i, c) in src.iter().enumerate() {
+        if !(c.is_ascii_alphabetic()
+            || c.is_ascii_digit()
+            || c == &0x2B
+            || c == &0x2D
+            || c == &0x2E)
+        {
+            if c == &0x3a {
+                return Ok((&src[(i + 1)..], &src[..i]));
+            } else {
+                return Err(nom::Err::Error(nom::error::make_error(
+                    src,
+                    nom::error::ErrorKind::Fail,
+                )));
+            }
+        }
+    }
+    Err(nom::Err::Error(nom::error::make_error(
+        src,
+        nom::error::ErrorKind::Fail,
+    )))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        let raw = b"sip:0.0.0.0:44572";
+        let (rest, uri) = Uri::parse(raw).unwrap();
+        println!("{:?}", std::str::from_utf8(rest));
+        println!("URI={:?}", uri);
+    }
+}

@@ -3,6 +3,7 @@ use nom::{bytes::complete::tag, IResult};
 use crate::message::StatusCode;
 use crate::parse_utils::{CRLF, SIP_VERSION, SP};
 
+#[derive(Debug)]
 pub struct StatusLine {
     pub status_code: StatusCode,
     pub reason_phrase: Box<[u8]>,

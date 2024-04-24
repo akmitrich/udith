@@ -5,6 +5,7 @@ use nom::IResult;
 pub use request::*;
 pub use status::*;
 
+#[derive(Debug)]
 pub enum StartLine {
     Request(RequestLine),
     Status(StatusLine),

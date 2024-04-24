@@ -1,3 +1,5 @@
+use nom::IResult;
+
 #[derive(Debug)]
 pub struct Address {
     pub spec: String,
@@ -16,6 +18,12 @@ impl TryFrom<Box<[u8]>> for Address {
             spec: maybe_spec.ok_or(value)?,
             params,
         })
+    }
+}
+
+impl Address {
+    pub fn parse(src: &[u8]) -> IResult<&[u8], Self> {
+        todo!()
     }
 }
 

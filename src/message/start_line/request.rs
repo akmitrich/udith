@@ -5,6 +5,7 @@ use crate::{
     parse_utils::{CRLF, SIP_VERSION, SP},
 };
 
+#[derive(Debug)]
 pub struct RequestLine {
     pub method: Method,
     pub uri: Box<[u8]>,
