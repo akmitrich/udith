@@ -29,6 +29,13 @@ pub fn hcolon(src: &[u8]) -> IResult<&[u8], u8> {
     )(src)
 }
 
+pub fn token(src: &[u8]) -> IResult<&[u8], &[u8]> {
+    nom::bytes::complete::take_while(|x: u8| {
+        x.is_ascii_alphanumeric()
+            || ['-', '.', '!', '%', '*', '_', '+', '`', '\'', '~'].contains(&char::from(x))
+    })(src)
+}
+
 pub fn text_utf8_byte(src: &[u8]) -> IResult<&[u8], u8> {
     let c = src
         .first()
@@ -56,18 +63,6 @@ fn next_non_whitespace(src: &[u8]) -> Option<u8> {
         }
     }
     None
-}
-
-pub trait IsSipToken {
-    /// token = 1*(alphanum / "-" / "." / "!" / "%" / "*" / "_" / "+" / "`" / "'" / "~" )
-    fn is_sip_token(&self) -> bool;
-}
-
-impl IsSipToken for u8 {
-    fn is_sip_token(&self) -> bool {
-        self.is_ascii_alphanumeric()
-            || ['-', '.', '!', '%', '*', '_', '+', '`', '\'', '~'].contains(&char::from(*self))
-    }
 }
 
 #[cfg(test)]

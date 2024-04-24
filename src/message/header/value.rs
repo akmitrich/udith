@@ -126,6 +126,6 @@ mod tests {
         let line = "lunch  with \tme \r\n мама\r\n";
         let (rest, v) = Value::parse(line.as_bytes()).unwrap();
         assert!(rest.is_empty());
-        assert_eq!("Ok(\"lunch  with \\tme мама\")", format!("{:?}", v));
+        assert_eq!("lunch  with \tme мама", std::str::from_utf8(&v).unwrap());
     }
 }
