@@ -77,7 +77,34 @@ mod tests {
     fn it_works() {
         let raw = b"sip:0.0.0.0:44572";
         let (rest, uri) = Uri::parse(raw).unwrap();
-        println!("{:?}", std::str::from_utf8(rest));
-        println!("URI={:?}", uri);
+        assert!(rest.is_empty());
+        if let Uri::Sip(uri) = uri {
+            assert!(uri.userinfo.is_none());
+            assert_eq!("0.0.0.0", uri.hostport.hostname);
+            assert_eq!(Some(44572), uri.hostport.port);
+            assert!(uri.parameters.is_empty());
+            assert!(uri.headers.is_empty());
+        } else {
+            unreachable!()
+        };
+    }
+
+    #[test]
+    fn sips_with_params() {
+        let raw = b"sips:127.0.0.1;transport=udp;maddr=sip.google.com;lr;opti=someid";
+        let (rest, uri) = Uri::parse(raw).unwrap();
+        assert!(rest.is_empty());
+        if let Uri::Sips(uri) = uri {
+            assert!(uri.userinfo.is_none());
+            assert_eq!("127.0.0.1", uri.hostport.hostname);
+            assert_eq!(None, uri.hostport.port);
+            assert_eq!(
+                r#"[Transport(Udp), Maddr("sip.google.com"), Lr, Other { name: "opti", value: "someid" }]"#,
+                format!("{:?}", uri.parameters.is_empty())
+            );
+            assert!(uri.headers.is_empty());
+        } else {
+            unreachable!()
+        };
     }
 }

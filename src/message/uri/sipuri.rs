@@ -1,4 +1,7 @@
-use nom::{multi::many_m_n, IResult};
+use nom::{
+    multi::{many0, many_m_n},
+    IResult,
+};
 
 use super::{
     hostport::HostPort, uriheader::UriHeader, uriparameter::UriParameter, userinfo::UserInfo,
@@ -6,16 +9,21 @@ use super::{
 
 #[derive(Debug)]
 pub struct SipUri {
-    userinfo: Option<UserInfo>,
-    hostport: HostPort,
-    parameters: Vec<UriParameter>,
-    headers: Vec<UriHeader>,
+    pub userinfo: Option<UserInfo>,
+    pub hostport: HostPort,
+    pub parameters: Vec<UriParameter>,
+    pub headers: Vec<UriHeader>,
 }
 
 impl SipUri {
     pub fn parse(src: &[u8]) -> IResult<&[u8], Self> {
-        let (x, y) = many_m_n(0, 1, UserInfo::parse)(src)?;
-        println!("{:?} -> {:?}", y.first(), std::str::from_utf8(x));
+        let (rest, userinfo) = many_m_n(0, 1, UserInfo::parse)(src)?;
+        let (rest, hostport) = HostPort::parse(rest)?;
+        let (rest, parameters) = many0(UriParameter::parse)(rest)?;
+        println!(
+            "({:?}. <{:?}> [{:?}] {:?}",
+            rest, userinfo, hostport, parameters
+        );
         todo!()
     }
 }

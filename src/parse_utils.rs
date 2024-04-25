@@ -5,7 +5,7 @@ pub const CRLF: &[u8] = b"\r\n";
 pub const SIP_VERSION: &[u8] = b"SIP/2.0";
 
 use nom::{
-    bytes::complete::tag,
+    bytes::complete::{tag, take_while},
     character::complete::{space0, space1},
     multi::many_m_n,
     sequence::tuple,
@@ -34,6 +34,13 @@ pub fn token(src: &[u8]) -> IResult<&[u8], &[u8]> {
         x.is_ascii_alphanumeric()
             || ['-', '.', '!', '%', '*', '_', '+', '`', '\'', '~'].contains(&char::from(x))
     })(src)
+}
+
+pub fn parse_host(src: &[u8]) -> IResult<&[u8], String> {
+    nom::combinator::map(
+        take_while(|x: u8| !b":;?".contains(&x) && x.is_ascii_graphic()),
+        |host| std::str::from_utf8(host).unwrap().to_owned(),
+    )(src)
 }
 
 pub fn text_utf8_byte(src: &[u8]) -> IResult<&[u8], u8> {
