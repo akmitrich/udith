@@ -5,7 +5,7 @@ pub const CRLF: &[u8] = b"\r\n";
 pub const SIP_VERSION: &[u8] = b"SIP/2.0";
 
 use nom::{
-    bytes::complete::{tag, take_while},
+    bytes::complete::{tag, take_while, take_while_m_n},
     character::complete::{space0, space1},
     multi::many_m_n,
     sequence::tuple,
@@ -20,6 +20,7 @@ pub fn lws(src: &[u8]) -> IResult<&[u8], u8> {
     )(src)
 }
 
+// According to RFC2234 (SP / HTAB) is the same as WSP
 pub fn hcolon(src: &[u8]) -> IResult<&[u8], u8> {
     // HCOLON = *( SP / HTAB ) ":" SWS
     // SWS  =  [LWS] ; sep whitespace
@@ -30,13 +31,43 @@ pub fn hcolon(src: &[u8]) -> IResult<&[u8], u8> {
 }
 
 pub fn token(src: &[u8]) -> IResult<&[u8], &[u8]> {
-    nom::bytes::complete::take_while(|x: u8| {
+    // 1*(alphanum / "-" / "." / "!" / "%" / "*" / "_" / "+" / "`" / "'" / "~" )
+    nom::bytes::complete::take_while1(|x: u8| {
         x.is_ascii_alphanumeric()
             || ['-', '.', '!', '%', '*', '_', '+', '`', '\'', '~'].contains(&char::from(x))
     })(src)
 }
 
+pub fn escaped(src: &[u8]) -> IResult<&[u8], &[u8]> {
+    // escaped = "%" HEXDIG HEXDIG
+    let _ = tuple((
+        tag(b"%"),
+        take_while_m_n(2, 2, |x: u8| x.is_ascii_hexdigit()),
+    ))(src)?;
+    Ok((&src[3..], &src[..3]))
+}
+
+pub fn unreserved1(src: &[u8]) -> IResult<&[u8], &[u8]> {
+    // unreserved  =  alphanum / mark
+    // mark        =  "-" / "_" / "." / "!" / "~" / "*" / "'" / "(" / ")"
+    nom::bytes::complete::take_while1(|x: u8| {
+        x.is_ascii_alphanumeric() || b"-_.!~*'()".contains(&x)
+    })(src)
+}
+
+// TODO: make this fn complient with IPv6
 pub fn parse_host(src: &[u8]) -> IResult<&[u8], String> {
+    // host             =  hostname / IPv4address / IPv6reference
+    // hostname         =  *( domainlabel "." ) toplabel [ "." ]
+    // domainlabel      =  alphanum
+    //                     / alphanum *( alphanum / "-" ) alphanum
+    // toplabel         =  ALPHA / ALPHA *( alphanum / "-" ) alphanum
+    // IPv4address    =  1*3DIGIT "." 1*3DIGIT "." 1*3DIGIT "." 1*3DIGIT
+    // IPv6reference  =  "[" IPv6address "]"
+    // IPv6address    =  hexpart [ ":" IPv4address ]
+    // hexpart        =  hexseq / hexseq "::" [ hexseq ] / "::" [ hexseq ]
+    // hexseq         =  hex4 *( ":" hex4)
+    // hex4           =  1*4HEXDIG
     nom::combinator::map(
         take_while(|x: u8| !b":;?".contains(&x) && x.is_ascii_graphic()),
         |host| std::str::from_utf8(host).unwrap().to_owned(),
@@ -80,5 +111,15 @@ mod tests {
     fn utf8_byte_works() {
         let line = b" \r\n Ok";
         println!("{:?}", next_non_whitespace(&line[1..]))
+    }
+
+    #[test]
+    fn token_works() {
+        assert_eq!(b"my", token(b"my name is").unwrap().1);
+        assert_eq!(b"123nebula765", token(b"123nebula765=ABC").unwrap().1);
+        assert_eq!(b"%~abc!%", token(b"%~abc!%").unwrap().1);
+
+        assert!(token(b"").is_err());
+        assert!(token(b"#SIPrules!").is_err());
     }
 }

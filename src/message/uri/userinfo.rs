@@ -7,8 +7,8 @@ use nom::{
 
 #[derive(Debug)]
 pub struct UserInfo {
-    user: String,
-    password: Option<String>,
+    pub user: String,
+    pub password: Option<String>,
 }
 
 impl UserInfo {
@@ -37,7 +37,7 @@ fn parse_password(src: &[u8]) -> IResult<&[u8], Option<String>> {
         return Ok((src, None));
     };
     let (rest, password_bytes) =
-        take_while(|x: u8| !b"@".contains(&x) && x.is_ascii_graphic())(src)?;
+        take_while(|x: u8| !b"@".contains(&x) && x.is_ascii_graphic())(rest)?;
     Ok((
         rest,
         std::str::from_utf8(password_bytes)
