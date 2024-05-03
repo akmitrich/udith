@@ -12,6 +12,7 @@ pub enum Value {
     CSeq { num: u32, method: Method },
     CallId(Box<[u8]>),
     MaxForwards(usize),
+    ContentLength(usize),
     Raw(Box<[u8]>),
 }
 
@@ -62,6 +63,10 @@ impl Value {
                 Some(n) => Self::MaxForwards(n),
                 None => default_value(data),
             },
+            "content-length" => match data.as_ref().parse_to() {
+                Some(n) => Self::ContentLength(n),
+                None => default_value(data),
+            },
             _ => default_value(data),
         }
     }
@@ -83,6 +88,7 @@ impl TryFrom<&Value> for String {
                 .map(ToOwned::to_owned)
                 .map_err(|_| {}),
             Value::MaxForwards(n) => Ok(format!("{}", n)),
+            Value::ContentLength(n) => Ok(format!("{}", n)),
             Value::Raw(raw) => std::str::from_utf8(raw)
                 .map(ToOwned::to_owned)
                 .map_err(|_| {}),
@@ -111,7 +117,7 @@ impl std::fmt::Debug for Value {
             Self::To(address) | Self::From(address) => write!(f, "{:?}", address),
             Self::CSeq { num, method } => write!(f, "{} {:?}", num, method),
             Self::CallId(id) => write!(f, "{}", std::str::from_utf8(id).unwrap_or("BAD ID")),
-            Self::MaxForwards(n) => write!(f, "{}", n),
+            Self::MaxForwards(n) | Self::ContentLength(n) => write!(f, "{}", n),
             Self::Raw(raw) => write!(f, "{:?}", std::str::from_utf8(raw)),
         }
     }

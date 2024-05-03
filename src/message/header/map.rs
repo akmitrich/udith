@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use nom::IResult;
+use std::collections::HashMap;
 
 use super::{Header, Value};
 
@@ -36,8 +35,13 @@ impl Map {
 
 impl Map {
     pub fn content_length(&self) -> Option<usize> {
-        self.raw_header_value("content-length")
-            .and_then(|content_length| content_length.try_into().ok())
+        self.get("content-length").and_then(|header| {
+            if let Value::ContentLength(n) = &header.value {
+                Some(*n)
+            } else {
+                None
+            }
+        })
     }
 
     pub fn via(&self) -> Option<&Header> {

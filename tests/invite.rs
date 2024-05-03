@@ -28,19 +28,3 @@ async fn get_provision_on_invite() {
     let n = sock.recv(&mut buf).await.unwrap();
     println!("Answer is {:?}", std::str::from_utf8(&buf[..n]));
 }
-fn alpha(s: &[u8]) -> nom::IResult<&[u8], &[u8]> {
-    nom::bytes::complete::take_while(nom::character::is_alphabetic)(s)
-}
-
-fn port(rest: &[u8]) -> nom::IResult<&[u8], &[u8]> {
-    nom::bytes::complete::take_while(nom::character::is_digit)(rest)
-}
-
-#[test]
-fn test_nom() {
-    assert_eq!(alpha(b"latin123"), Ok((&b"123"[..], &b"latin"[..])));
-    assert_eq!(alpha(b"12345"), Ok((&b"12345"[..], &b""[..])));
-    assert_eq!(alpha(b"latin"), Ok((&b""[..], &b"latin"[..])));
-    assert_eq!(alpha(b""), Ok((&b""[..], &b""[..])));
-    assert_eq!(port(b"44572"), Ok((b"" as &[u8], b"44572" as &[u8])));
-}

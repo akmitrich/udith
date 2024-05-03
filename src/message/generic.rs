@@ -2,6 +2,7 @@ use nom::IResult;
 
 use super::{header, start_line::StartLine};
 
+#[derive(Debug)]
 pub struct Message {
     pub start_line: StartLine,
     pub headers: header::Map,

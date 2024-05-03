@@ -30,8 +30,8 @@ async fn handle(
 ) -> Result<(), anyhow::Error> {
     if let Ok((rest, msg)) = message::Message::parse(&packet) {
         println!(
-            "The start line is {:?}\n{:#?}",
-            msg.start_line,
+            "The message is {:?}\n{:#?}",
+            msg,
             msg.headers.sip_sweet_six()
         );
         println!("Message parsed until: {:?}", std::str::from_utf8(rest));
