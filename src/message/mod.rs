@@ -27,6 +27,6 @@ mod tests {
             unreachable!()
         };
         assert_eq!(Method::Invite, request_line.method);
-        assert_eq!(b"sip:127.0.0.1:5060", request_line.uri.as_ref());
+        assert_eq!("sip:127.0.0.1:5060", request_line.uri.to_string());
     }
 }

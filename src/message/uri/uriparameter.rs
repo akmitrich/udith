@@ -42,6 +42,32 @@ impl UriParameter {
     }
 }
 
+impl ToString for UriParameter {
+    fn to_string(&self) -> String {
+        format!(
+            ";{}",
+            match self {
+                UriParameter::Transport(transport) =>
+                    format!("transport={}", transport.to_string()),
+                UriParameter::User(user) => format!("user={}", user.to_string()),
+                UriParameter::Method(method) => format!("method={}", method.to_string()),
+                UriParameter::Ttl(ttl) => format!("ttl={}", ttl),
+                UriParameter::Maddr(maddr) => format!("maddr={}", maddr),
+                UriParameter::Lr => "lr".to_string(),
+                UriParameter::Other { name, value } => format!(
+                    "{}{}",
+                    name,
+                    if value.is_empty() {
+                        String::new()
+                    } else {
+                        format!("={}", value)
+                    }
+                ),
+            }
+        )
+    }
+}
+
 fn parse_transport(src: &[u8]) -> IResult<&[u8], UriParameter> {
     map(
         tuple((tag(b"transport="), TransportParam::parse)),

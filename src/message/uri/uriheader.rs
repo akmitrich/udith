@@ -27,6 +27,12 @@ impl UriHeader {
     }
 }
 
+impl ToString for UriHeader {
+    fn to_string(&self) -> String {
+        format!("{}={}", self.name, self.value)
+    }
+}
+
 pub fn parse_headers(src: &[u8]) -> IResult<&[u8], Vec<UriHeader>> {
     // headers = "?" header *( "&" header )
     let Ok((rest, _)) = tag::<_, _, ()>(b"?")(src) else {

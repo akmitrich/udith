@@ -29,3 +29,15 @@ impl TransportParam {
         )(src)
     }
 }
+
+impl ToString for TransportParam {
+    fn to_string(&self) -> String {
+        match self {
+            TransportParam::Udp => "udp".to_string(),
+            TransportParam::Tcp => "tcp".to_string(),
+            TransportParam::Sctp => "sctp".to_string(),
+            TransportParam::Tls => "tls".to_string(),
+            TransportParam::Other(other) => other.to_owned(),
+        }
+    }
+}

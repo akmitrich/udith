@@ -38,6 +38,25 @@ impl Uri {
     }
 }
 
+impl ToString for Uri {
+    fn to_string(&self) -> String {
+        let mut uri_string = String::new();
+        let uri = match self {
+            Uri::Sip(uri) => {
+                uri_string.push_str("sip:");
+                uri
+            }
+            Uri::Sips(uri) => {
+                uri_string.push_str("sips:");
+                uri
+            }
+            Uri::Absolute { scheme, uri } => todo!(),
+        };
+        uri_string.push_str(&uri.to_string());
+        uri_string
+    }
+}
+
 fn parse_scheme(src: &[u8]) -> IResult<&[u8], &[u8]> {
     // scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
     if src.first().map(|c| c.is_ascii_alphabetic()) != Some(true) {
@@ -77,7 +96,6 @@ mod tests {
     fn it_works() {
         let raw = b"sip:0.0.0.0:44572";
         let (rest, uri) = Uri::parse(raw).unwrap();
-        println!("->> URI={:?}", uri);
         assert!(rest.is_empty());
         if let Uri::Sip(uri) = uri {
             assert!(uri.userinfo.is_none());
@@ -94,7 +112,6 @@ mod tests {
     fn sips_with_params() {
         let raw = b"sips:127.0.0.1;transport=udp;maddr=sip.google.com;lr;opti=someid";
         let (rest, uri) = Uri::parse(raw).unwrap();
-        println!("->> URI={:?}", uri);
         assert!(rest.is_empty());
         if let Uri::Sips(uri) = uri {
             assert!(uri.userinfo.is_none());
@@ -114,7 +131,6 @@ mod tests {
     fn sip_with_headers() {
         let raw = b"sip:127.0.0.1;transport=udp?abc=77&xyz=?:&[tellme]=";
         let (rest, uri) = Uri::parse(raw).unwrap();
-        println!("->> URI={:?}", uri);
         assert!(rest.is_empty());
         if let Uri::Sip(uri) = uri {
             assert!(uri.userinfo.is_none());
@@ -134,7 +150,6 @@ mod tests {
     fn sip_with_userinfo() {
         let raw = b"sip:+1-212-555-1234:authenticate_me@gw.com;user=phone";
         let (rest, uri) = Uri::parse(raw).unwrap();
-        println!("->> URI={:?}", uri);
         assert!(rest.is_empty());
         if let Uri::Sip(uri) = uri {
             assert_eq!("+1-212-555-1234", uri.userinfo.as_ref().unwrap().user);
@@ -143,5 +158,33 @@ mod tests {
                 uri.userinfo.as_ref().unwrap().password.as_ref().unwrap()
             );
         }
+    }
+
+    #[test]
+    fn test_request_line() {
+        let raw = b"INVITE sip:127.0.0.1:5060 SIP/2.0\r\n";
+        let (rest, uri) = nom::combinator::map(
+            nom::sequence::tuple((
+                crate::message::Method::parse,
+                nom::sequence::delimited(tag(b" "), Uri::parse, tag(b" ")),
+                tag(b"SIP/2.0"),
+                tag(b"\r\n"),
+            )),
+            |(method, uri, _, _)| {
+                assert_eq!(crate::message::Method::Invite, method);
+                uri
+            },
+        )(raw)
+        .unwrap();
+        assert!(rest.is_empty());
+        if let Uri::Sip(uri) = uri {
+            assert!(uri.userinfo.is_none());
+            assert_eq!("127.0.0.1", uri.hostport.hostname);
+            assert_eq!(Some(5060), uri.hostport.port);
+            assert!(uri.parameters.is_empty());
+            assert!(uri.headers.is_empty());
+        } else {
+            unreachable!()
+        };
     }
 }

@@ -13,10 +13,22 @@ pub struct UserInfo {
 
 impl UserInfo {
     pub fn parse(src: &[u8]) -> IResult<&[u8], Self> {
+        // userinfo = ( user / telephone-subscriber ) [ ":" password ] "@"
         map(
             tuple((parse_user, parse_password, tag(b"@"))),
             |(user, password, _)| Self { user, password },
         )(src)
+    }
+}
+
+impl ToString for UserInfo {
+    fn to_string(&self) -> String {
+        let pass = if let Some(ref pass) = self.password {
+            format!(":{}", pass)
+        } else {
+            String::new()
+        };
+        format!("{}{}", self.user, pass)
     }
 }
 

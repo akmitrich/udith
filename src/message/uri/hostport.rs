@@ -23,6 +23,20 @@ impl HostPort {
     }
 }
 
+impl ToString for HostPort {
+    fn to_string(&self) -> String {
+        format!(
+            "{}{}",
+            self.hostname,
+            if let Some(port) = self.port {
+                format!(":{}", port)
+            } else {
+                String::new()
+            }
+        )
+    }
+}
+
 fn parse_port(src: &[u8]) -> IResult<&[u8], Option<u16>> {
     let Ok((rest, _)) = tag::<_, _, ()>(b":")(src) else {
         return Ok((src, None));

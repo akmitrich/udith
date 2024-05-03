@@ -20,3 +20,13 @@ impl UserParam {
         })(src)
     }
 }
+
+impl ToString for UserParam {
+    fn to_string(&self) -> String {
+        match self {
+            UserParam::Ip => "ip".to_string(),
+            UserParam::Phone => "phone".to_string(),
+            UserParam::Other(other) => other.to_owned(),
+        }
+    }
+}

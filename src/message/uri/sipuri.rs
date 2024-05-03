@@ -20,18 +20,42 @@ pub struct SipUri {
 
 impl SipUri {
     pub fn parse(src: &[u8]) -> IResult<&[u8], Self> {
-        let (rest, mut userinfo) = many_m_n(0, 1, UserInfo::parse)(src)?;
-        let (rest, hostport) = HostPort::parse(rest)?;
-        let (rest, parameters) = many0(UriParameter::parse)(rest)?;
-        let (rest, headers) = parse_headers(rest)?;
-        Ok((
-            rest,
-            Self {
+        nom::combinator::map(
+            nom::sequence::tuple((
+                many_m_n(0, 1, UserInfo::parse),
+                HostPort::parse,
+                many0(UriParameter::parse),
+                parse_headers,
+            )),
+            |(mut userinfo, hostport, parameters, headers)| Self {
                 userinfo: userinfo.pop(),
                 hostport,
                 parameters,
                 headers,
             },
-        ))
+        )(src)
+    }
+}
+
+impl ToString for SipUri {
+    fn to_string(&self) -> String {
+        let mut uri_string = String::new();
+        if let Some(ref userinfo) = self.userinfo {
+            uri_string.push_str(&userinfo.to_string());
+        }
+        uri_string.push_str(&self.hostport.to_string());
+        for parameter in self.parameters.iter() {
+            uri_string.push_str(&parameter.to_string());
+        }
+        let mut header_iter = self.headers.iter();
+        if let Some(first_header) = header_iter.next() {
+            uri_string.push('?');
+            uri_string.push_str(&first_header.to_string());
+            for header in header_iter {
+                uri_string.push('&');
+                uri_string.push_str(&header.to_string());
+            }
+        }
+        uri_string
     }
 }
