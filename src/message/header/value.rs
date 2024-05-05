@@ -17,63 +17,30 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn parse(src: &[u8]) -> IResult<&[u8], Box<[u8]>> {
-        nom::combinator::map(
-            nom::sequence::tuple((
-                nom::multi::many0(nom::branch::alt((text_utf8_byte, lws))),
-                nom::bytes::complete::tag(CRLF),
-            )),
-            |(x, _)| x.into_boxed_slice(),
-        )(src)
-    }
-
-    pub fn with_name(name: impl AsRef<str>, data: Box<[u8]>) -> Self {
+    pub fn parse_with_name(name: impl AsRef<str>, src: &[u8]) -> IResult<&[u8], Self> {
         match name.as_ref().to_lowercase().as_str() {
-            "via" | "v" => match Via::try_from(data) {
-                Ok(via) => Self::Via(via),
-                Err(data) => default_value(data),
-            },
-            to_or_from @ ("to" | "t" | "from" | "f") => match Address::try_from(data) {
-                Ok(address) => {
+            "via" | "v" => {
+                let (rest, via) = Via::parse(src)?;
+                Ok((rest, Self::Via(via)))
+            }
+            to_or_from @ ("to" | "t" | "from" | "f") => {
+                let (rest, address) = Address::parse(src)?;
+                Ok((
+                    rest,
                     if to_or_from.starts_with('t') {
                         Self::To(address)
                     } else {
                         Self::From(address)
-                    }
-                }
-                Err(data) => default_value(data),
-            },
-            "cseq" => {
-                let parsed = nom::sequence::tuple((
-                    nom::bytes::complete::take_while(|x: u8| x.is_ascii_digit()),
-                    lws,
-                    Method::parse,
-                ))(data.as_ref())
-                .map(|(_, num_method)| num_method);
-                match parsed {
-                    Ok((num, _, method)) => Self::CSeq {
-                        num: num.parse_to().unwrap(),
-                        method,
                     },
-                    Err(_) => default_value(data),
-                }
+                ))
             }
-            "call-id" => Self::CallId(data),
-            "max-forwards" => match data.as_ref().parse_to() {
-                Some(n) => Self::MaxForwards(n),
-                None => default_value(data),
-            },
-            "content-length" => match data.as_ref().parse_to() {
-                Some(n) => Self::ContentLength(n),
-                None => default_value(data),
-            },
-            _ => default_value(data),
+            "cseq" => Self::parse_cseq(src),
+            "call-id" => Self::parse_call_id(src),
+            "max-forwards" => Self::parse_max_forwards(src),
+            "content-length" => Self::parse_content_length(src),
+            _ => Self::parse_default(src),
         }
     }
-}
-
-fn default_value(data: Box<[u8]>) -> Value {
-    Value::Raw(data)
 }
 
 impl TryFrom<&Value> for String {
@@ -123,6 +90,43 @@ impl std::fmt::Debug for Value {
     }
 }
 
+impl Value {
+    fn parse_cseq(src: &[u8]) -> IResult<&[u8], Self> {
+        nom::combinator::map(
+            nom::sequence::tuple((
+                nom::bytes::complete::take_while(|x: u8| x.is_ascii_digit()),
+                lws,
+                Method::parse,
+            )),
+            |(cseq, _, method)| Self::CSeq {
+                num: cseq.parse_to().unwrap(),
+                method,
+            },
+        )(src)
+    }
+
+    fn parse_call_id(src: &[u8]) -> IResult<&[u8], Self> {
+        todo!()
+    }
+
+    fn parse_max_forwards(src: &[u8]) -> IResult<&[u8], Self> {
+        todo!()
+    }
+
+    fn parse_content_length(src: &[u8]) -> IResult<&[u8], Self> {
+        todo!()
+    }
+
+    fn parse_default(src: &[u8]) -> IResult<&[u8], Self> {
+        nom::combinator::map(
+            nom::sequence::tuple((
+                nom::multi::many0(nom::branch::alt((text_utf8_byte, lws))),
+                nom::bytes::complete::tag(CRLF),
+            )),
+            |(x, _)| Self::Raw(x.into_boxed_slice()),
+        )(src)
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -130,8 +134,8 @@ mod tests {
     #[test]
     fn it_works() {
         let line = "lunch  with \tme \r\n мама\r\n";
-        let (rest, v) = Value::parse(line.as_bytes()).unwrap();
+        let (rest, v) = Value::parse_default(line.as_bytes()).unwrap();
         assert!(rest.is_empty());
-        assert_eq!("lunch  with \tme мама", std::str::from_utf8(&v).unwrap());
+        assert_eq!("Ok(\"lunch  with \\tme мама\")", format!("{:?}", v));
     }
 }

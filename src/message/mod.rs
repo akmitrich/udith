@@ -11,6 +11,7 @@ pub use method::*;
 pub use raw::*;
 pub use start_line::StartLine;
 pub use status_code::*;
+pub use uri::*;
 
 #[cfg(test)]
 mod tests {

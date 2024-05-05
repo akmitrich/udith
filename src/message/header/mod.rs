@@ -24,8 +24,7 @@ impl Header {
         let (remainder, name) = Name::parse(src)?;
         if let Some(name) = name {
             let (rest, _) = hcolon(remainder)?;
-            let (rest, value) = Value::parse(rest)?;
-            let value = Value::with_name(&name, value);
+            let (rest, value) = Value::parse_with_name(&name, rest)?;
             Ok((rest, Some(Self { name, value })))
         } else {
             Ok((remainder, None))
