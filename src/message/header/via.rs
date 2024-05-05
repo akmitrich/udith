@@ -1,5 +1,6 @@
 use nom::IResult;
 
+#[derive(Debug)]
 pub struct Via {
     sent_protocol: String,
     sent_by: Box<[u8]>,

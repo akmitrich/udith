@@ -1,9 +1,13 @@
 use super::{Address, Via};
 use crate::{
     message::Method,
-    parse_utils::{lws, text_utf8_byte, CRLF},
+    parse_utils::{lws, parse_usize, text_utf8_byte, word, CRLF},
 };
-use nom::{IResult, ParseTo};
+use nom::{
+    bytes::complete::{tag, take_while1},
+    sequence::tuple,
+    IResult, ParseTo,
+};
 
 pub enum Value {
     Via(Via),
@@ -35,7 +39,7 @@ impl Value {
                 ))
             }
             "cseq" => Self::parse_cseq(src),
-            "call-id" => Self::parse_call_id(src),
+            "call-id" | "i" => Self::parse_call_id(src),
             "max-forwards" => Self::parse_max_forwards(src),
             "content-length" => Self::parse_content_length(src),
             _ => Self::parse_default(src),
@@ -80,7 +84,7 @@ impl TryFrom<&Value> for usize {
 impl std::fmt::Debug for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Via(via) => write!(f, "VIA"),
+            Self::Via(via) => write!(f, "{:?}", via),
             Self::To(address) | Self::From(address) => write!(f, "{:?}", address),
             Self::CSeq { num, method } => write!(f, "{} {:?}", num, method),
             Self::CallId(id) => write!(f, "{}", std::str::from_utf8(id).unwrap_or("BAD ID")),
@@ -92,12 +96,9 @@ impl std::fmt::Debug for Value {
 
 impl Value {
     fn parse_cseq(src: &[u8]) -> IResult<&[u8], Self> {
+        // CSeq  =  "CSeq" HCOLON 1*DIGIT LWS Method
         nom::combinator::map(
-            nom::sequence::tuple((
-                nom::bytes::complete::take_while(|x: u8| x.is_ascii_digit()),
-                lws,
-                Method::parse,
-            )),
+            tuple((take_while1(|x: u8| x.is_ascii_digit()), lws, Method::parse)),
             |(cseq, _, method)| Self::CSeq {
                 num: cseq.parse_to().unwrap(),
                 method,
@@ -106,20 +107,33 @@ impl Value {
     }
 
     fn parse_call_id(src: &[u8]) -> IResult<&[u8], Self> {
-        todo!()
+        // callid   =  word [ "@" word ]
+        let mut id = Vec::new();
+        let (rest, w1) = word(src)?;
+        id.extend_from_slice(w1);
+        let (rest, x) = nom::multi::many_m_n(0, 1, tuple((tag(b"@"), word)))(rest)?;
+        if let Some((_, w2)) = x.first() {
+            id.extend_from_slice(b"@");
+            id.extend_from_slice(w2);
+        }
+        Ok((rest, Self::CallId(id.into_boxed_slice())))
     }
 
     fn parse_max_forwards(src: &[u8]) -> IResult<&[u8], Self> {
-        todo!()
+        // Max-Forwards  =  "Max-Forwards" HCOLON 1*DIGIT
+        nom::combinator::map(parse_usize(), |max_forwards| {
+            Self::MaxForwards(max_forwards)
+        })(src)
     }
 
     fn parse_content_length(src: &[u8]) -> IResult<&[u8], Self> {
-        todo!()
+        // Content-Length  =  ( "Content-Length" / "l" ) HCOLON 1*DIGIT
+        nom::combinator::map(parse_usize(), |length| Self::ContentLength(length))(src)
     }
 
     fn parse_default(src: &[u8]) -> IResult<&[u8], Self> {
         nom::combinator::map(
-            nom::sequence::tuple((
+            tuple((
                 nom::multi::many0(nom::branch::alt((text_utf8_byte, lws))),
                 nom::bytes::complete::tag(CRLF),
             )),
