@@ -61,7 +61,7 @@ pub fn token(src: &[u8]) -> ParseResult<&[u8]> {
 pub fn word(src: &[u8]) -> ParseResult<&[u8]> {
     // word = 1*(alphanum / "-" / "." / "!" / "%" / "*" / "_" / "+" / "`" / "'" / "~" /
     // "(" / ")" / "<" / ">" / ":" / "\" / DQUOTE / "/" / "[" / "]" / "?" / "{" / "}" )
-    take_while1(|x: u8| x.is_ascii_alphabetic() || b"-.!%*_+`'~()<>:\\\"/[]?{}".contains(&x))(src)
+    take_while1(|x: u8| x.is_ascii_alphanumeric() || b"-.!%*_+`'~()<>:\\\"/[]?{}".contains(&x))(src)
 }
 
 pub fn escaped(src: &[u8]) -> ParseResult<&[u8]> {

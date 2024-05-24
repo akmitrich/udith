@@ -27,6 +27,7 @@ impl Header {
             let (rest, value) = Value::parse_with_name(&name, rest)?;
             (rest, Some(Self { name, value }))
         } else {
+            println!("Found empty line. {:?}", std::str::from_utf8(remainder));
             (remainder, None)
         };
         let (rest, _) = nom::bytes::complete::tag(CRLF)(rest)?;

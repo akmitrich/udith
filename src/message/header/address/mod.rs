@@ -21,6 +21,10 @@ impl TryFrom<Box<[u8]>> for Address {
 impl Address {
     pub fn parse(src: &[u8]) -> IResult<&[u8], Self> {
         // spec =  (name-addr / addr-spec ) *( SEMI param )
+        println!(
+            "Not implemented for: {:?}",
+            std::str::from_utf8(src).unwrap()
+        );
         todo!()
     }
 }
