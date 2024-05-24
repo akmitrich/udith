@@ -10,8 +10,7 @@ pub use name::*;
 pub use value::*;
 pub use via::*;
 
-use crate::parse_utils::hcolon;
-use nom::IResult;
+use crate::parse_utils::{hcolon, ParseResult};
 
 #[derive(Debug)]
 pub struct Header {
@@ -20,8 +19,9 @@ pub struct Header {
 }
 
 impl Header {
-    pub fn parse(src: &[u8]) -> IResult<&[u8], Option<Self>> {
-        let (remainder, name) = Name::parse(src)?;
+    pub fn parse(src: &[u8]) -> ParseResult<Option<Self>> {
+        let (remainder, name) = Name::parse(src)
+            .inspect_err(|_| println!("ERROR: {:?}", String::from_utf8(src.to_vec())))?;
         if let Some(name) = name {
             let (rest, _) = hcolon(remainder)?;
             let (rest, value) = Value::parse_with_name(&name, rest)?;

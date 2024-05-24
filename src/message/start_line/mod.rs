@@ -1,9 +1,10 @@
 mod request;
 mod status;
 
-use nom::IResult;
 pub use request::*;
 pub use status::*;
+
+use crate::parse_utils::ParseResult;
 
 #[derive(Debug)]
 pub enum StartLine {
@@ -12,7 +13,7 @@ pub enum StartLine {
 }
 
 impl StartLine {
-    pub fn parse(src: &[u8]) -> IResult<&[u8], StartLine> {
+    pub fn parse(src: &[u8]) -> ParseResult<StartLine> {
         match status::StatusLine::parse(src) {
             Ok((rest, status_line)) => Ok((rest, StartLine::Status(status_line))),
             Err(_) => {

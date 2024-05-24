@@ -1,5 +1,7 @@
 use nom::IResult;
 
+use crate::parse_utils::ParseResult;
+
 use super::{header, start_line::StartLine};
 
 #[derive(Debug)]
@@ -23,5 +25,30 @@ impl Message {
                 body,
             },
         ))
+    }
+}
+
+#[derive(Debug)]
+pub struct GenericParam {
+    name: String,
+    value: GenValue,
+}
+
+impl GenericParam {
+    pub fn parse(src: &[u8]) -> ParseResult<Self> {
+        todo!()
+    }
+}
+
+#[derive(Debug)]
+pub enum GenValue {
+    Token(String),
+    Host(String),
+    Quoted(String),
+}
+
+impl GenValue {
+    pub fn parse(src: &[u8]) -> ParseResult<Self> {
+        todo!()
     }
 }

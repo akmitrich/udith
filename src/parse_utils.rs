@@ -12,7 +12,9 @@ use nom::{
     IResult, ParseTo,
 };
 
-pub fn lws(src: &[u8]) -> IResult<&[u8], u8> {
+pub type ParseResult<'a, T> = IResult<&'a [u8], T>;
+
+pub fn lws(src: &[u8]) -> ParseResult<u8> {
     // LWS  =  [*WSP CRLF] 1*WSP ; linear whitespace
     nom::combinator::map(
         tuple((many_m_n(0, 1, tuple((space0, tag(CRLF)))), space1)),
@@ -20,28 +22,44 @@ pub fn lws(src: &[u8]) -> IResult<&[u8], u8> {
     )(src)
 }
 
-// According to RFC2234 (SP / HTAB) is the same as WSP
-pub fn hcolon(src: &[u8]) -> IResult<&[u8], u8> {
-    // HCOLON = *( SP / HTAB ) ":" SWS
+pub fn sws(src: &[u8]) -> ParseResult<u8> {
     // SWS  =  [LWS] ; sep whitespace
-    nom::combinator::map(
-        tuple((space0, tag(b":" as &[u8]), many_m_n(0, 1, lws))),
-        |_| 0x3a,
-    )(src)
+    nom::combinator::map(many_m_n(0, 1, lws), |_| 0x20)(src)
 }
 
-pub fn token(src: &[u8]) -> IResult<&[u8], &[u8]> {
+// According to RFC2234 (SP / HTAB) is the same as WSP
+pub fn hcolon(src: &[u8]) -> ParseResult<u8> {
+    // HCOLON = *( SP / HTAB ) ":" SWS
+    nom::combinator::map(tuple((space0, tag(b":" as &[u8]), sws)), |_| 0x3a)(src)
+}
+
+pub fn colon(src: &[u8]) -> ParseResult<u8> {
+    // COLON   =  SWS ":" SWS
+    nom::combinator::map(tuple((sws, tag(b":" as &[u8]), sws)), |_| 0x3a)(src)
+}
+
+pub fn comma(src: &[u8]) -> ParseResult<u8> {
+    // COMMA   =  SWS "," SWS
+    nom::combinator::map(tuple((sws, tag(b"," as &[u8]), sws)), |_| 0x2c)(src)
+}
+
+pub fn semi(src: &[u8]) -> ParseResult<u8> {
+    // SWS ";" SWS ; semicolon
+    nom::combinator::map(tuple((sws, tag(b";" as &[u8]), sws)), |_| 0x3b)(src)
+}
+
+pub fn token(src: &[u8]) -> ParseResult<&[u8]> {
     // 1*(alphanum / "-" / "." / "!" / "%" / "*" / "_" / "+" / "`" / "'" / "~" )
     take_while1(|x: u8| x.is_ascii_alphanumeric() || b"-.!%*_+`'~".contains(&x))(src)
 }
 
-pub fn word(src: &[u8]) -> IResult<&[u8], &[u8]> {
+pub fn word(src: &[u8]) -> ParseResult<&[u8]> {
     // word = 1*(alphanum / "-" / "." / "!" / "%" / "*" / "_" / "+" / "`" / "'" / "~" /
     // "(" / ")" / "<" / ">" / ":" / "\" / DQUOTE / "/" / "[" / "]" / "?" / "{" / "}" )
     take_while1(|x: u8| x.is_ascii_alphabetic() || b"-.!%*_+`'~()<>:\\\"/[]?{}".contains(&x))(src)
 }
 
-pub fn escaped(src: &[u8]) -> IResult<&[u8], &[u8]> {
+pub fn escaped(src: &[u8]) -> ParseResult<&[u8]> {
     // escaped = "%" HEXDIG HEXDIG
     let _ = tuple((
         tag(b"%"),
@@ -50,14 +68,14 @@ pub fn escaped(src: &[u8]) -> IResult<&[u8], &[u8]> {
     Ok((&src[3..], &src[..3]))
 }
 
-pub fn unreserved1(src: &[u8]) -> IResult<&[u8], &[u8]> {
+pub fn unreserved1(src: &[u8]) -> ParseResult<&[u8]> {
     // unreserved  =  alphanum / mark
     // mark        =  "-" / "_" / "." / "!" / "~" / "*" / "'" / "(" / ")"
     take_while1(|x: u8| x.is_ascii_alphanumeric() || b"-_.!~*'()".contains(&x))(src)
 }
 
 // TODO: make this fn complient with IPv6
-pub fn parse_host(src: &[u8]) -> IResult<&[u8], String> {
+pub fn parse_host(src: &[u8]) -> ParseResult<String> {
     // host             =  hostname / IPv4address / IPv6reference
     // hostname         =  *( domainlabel "." ) toplabel [ "." ]
     // domainlabel      =  alphanum
@@ -81,7 +99,13 @@ pub fn parse_usize<'a>() -> impl FnMut(&'a [u8]) -> IResult<&'a [u8], usize> {
     })
 }
 
-pub fn text_utf8_byte(src: &[u8]) -> IResult<&[u8], u8> {
+pub fn parse_port<'a>() -> impl FnMut(&'a [u8]) -> IResult<&'a [u8], u16> {
+    nom::combinator::map(take_while1(|x: u8| x.is_ascii_digit()), |num: &[u8]| {
+        num.parse_to().unwrap()
+    })
+}
+
+pub fn text_utf8_byte(src: &[u8]) -> ParseResult<u8> {
     let c = src
         .first()
         .ok_or_else(|| nom::Err::Error(nom::error::make_error(src, nom::error::ErrorKind::Fail)))?;
