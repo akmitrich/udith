@@ -1,6 +1,6 @@
 use nom::IResult;
 
-use crate::parse_utils::ParseResult;
+use crate::parse_utils::{equal, token, ParseResult};
 
 use super::{header, start_line::StartLine};
 
@@ -31,12 +31,22 @@ impl Message {
 #[derive(Debug)]
 pub struct GenericParam {
     name: String,
-    value: GenValue,
+    value: Option<GenValue>,
 }
 
 impl GenericParam {
     pub fn parse(src: &[u8]) -> ParseResult<Self> {
-        todo!()
+        let (remainder, name) =
+            nom::combinator::map(token, |name| String::from_utf8(name.to_vec()).unwrap())(src)?;
+        let (rest, maybe_value) =
+            nom::multi::many_m_n(0, 1, nom::sequence::tuple((equal, GenValue::parse)))(remainder)?;
+        Ok((
+            rest,
+            Self {
+                name,
+                value: maybe_value.into_iter().next().map(|(_, value)| value),
+            },
+        ))
     }
 }
 
@@ -49,6 +59,8 @@ pub enum GenValue {
 
 impl GenValue {
     pub fn parse(src: &[u8]) -> ParseResult<Self> {
-        todo!()
+        nom::combinator::map(token, |x| {
+            Self::Token(String::from_utf8(x.to_vec()).unwrap())
+        })(src)
     }
 }

@@ -133,11 +133,8 @@ impl Value {
 
     fn parse_default(src: &[u8]) -> IResult<&[u8], Self> {
         nom::combinator::map(
-            tuple((
-                nom::multi::many0(nom::branch::alt((text_utf8_byte, lws))),
-                nom::bytes::complete::tag(CRLF),
-            )),
-            |(x, _)| Self::Raw(x.into_boxed_slice()),
+            nom::multi::many0(nom::branch::alt((text_utf8_byte, lws))),
+            |x| Self::Raw(x.into_boxed_slice()),
         )(src)
     }
 }
@@ -146,8 +143,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
-        let line = "lunch  with \tme \r\n мама\r\n";
+    fn parse_default_works() {
+        let line = "lunch  with \tme \r\n мама";
         let (rest, v) = Value::parse_default(line.as_bytes()).unwrap();
         assert!(rest.is_empty());
         assert_eq!("Ok(\"lunch  with \\tme мама\")", format!("{:?}", v));

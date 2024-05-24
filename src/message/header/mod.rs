@@ -10,7 +10,7 @@ pub use name::*;
 pub use value::*;
 pub use via::*;
 
-use crate::parse_utils::{hcolon, ParseResult};
+use crate::parse_utils::{hcolon, ParseResult, CRLF};
 
 #[derive(Debug)]
 pub struct Header {
@@ -20,15 +20,17 @@ pub struct Header {
 
 impl Header {
     pub fn parse(src: &[u8]) -> ParseResult<Option<Self>> {
-        let (remainder, name) = Name::parse(src)
-            .inspect_err(|_| println!("ERROR: {:?}", String::from_utf8(src.to_vec())))?;
-        if let Some(name) = name {
+        let (remainder, name) =
+            Name::parse(src).inspect_err(|e| println!("Error parsing header name: {:?}", e))?;
+        let (rest, header) = if let Some(name) = name {
             let (rest, _) = hcolon(remainder)?;
             let (rest, value) = Value::parse_with_name(&name, rest)?;
-            Ok((rest, Some(Self { name, value })))
+            (rest, Some(Self { name, value }))
         } else {
-            Ok((remainder, None))
-        }
+            (remainder, None)
+        };
+        let (rest, _) = nom::bytes::complete::tag(CRLF)(rest)?;
+        Ok((rest, header))
     }
 }
 
@@ -47,9 +49,22 @@ mod tests {
 
     #[test]
     fn empty_line() {
-        let line = b"\r\n";
+        let line = b"\r\n\r\n";
         let (rest, none) = Header::parse(line).unwrap();
         assert!(rest.is_empty());
         assert!(none.is_none());
+    }
+
+    #[test]
+    fn test_content_length() {
+        let line = b"Content-Length  :   \r\n \t525\r\n";
+        let (src, header) = Header::parse(line as &[u8]).unwrap();
+        assert!(src.is_empty());
+        let header = header.unwrap();
+        if let Value::ContentLength(length) = header.value {
+            println!("{:?} -> {}", header.name, length);
+        } else {
+            unreachable!()
+        }
     }
 }

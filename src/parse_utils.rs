@@ -48,6 +48,11 @@ pub fn semi(src: &[u8]) -> ParseResult<u8> {
     nom::combinator::map(tuple((sws, tag(b";" as &[u8]), sws)), |_| 0x3b)(src)
 }
 
+pub fn equal(src: &[u8]) -> ParseResult<u8> {
+    // SWS "=" SWS ; equal
+    nom::combinator::map(tuple((sws, tag(b"=" as &[u8]), sws)), |_| 0x3d)(src)
+}
+
 pub fn token(src: &[u8]) -> ParseResult<&[u8]> {
     // 1*(alphanum / "-" / "." / "!" / "%" / "*" / "_" / "+" / "`" / "'" / "~" )
     take_while1(|x: u8| x.is_ascii_alphanumeric() || b"-.!%*_+`'~".contains(&x))(src)
@@ -100,6 +105,12 @@ pub fn parse_usize<'a>() -> impl FnMut(&'a [u8]) -> IResult<&'a [u8], usize> {
 }
 
 pub fn parse_port<'a>() -> impl FnMut(&'a [u8]) -> IResult<&'a [u8], u16> {
+    nom::combinator::map(take_while1(|x: u8| x.is_ascii_digit()), |num: &[u8]| {
+        num.parse_to().unwrap()
+    })
+}
+
+pub fn parse_u8<'a>() -> impl FnMut(&'a [u8]) -> IResult<&'a [u8], u8> {
     nom::combinator::map(take_while1(|x: u8| x.is_ascii_digit()), |num: &[u8]| {
         num.parse_to().unwrap()
     })

@@ -27,8 +27,9 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let src = b"SIP/2.0/UDP 127.0.0.1:40675;rport;branch=z9hG4bK7rmHHX13H1N3e";
+        let src = b"SIP/2.0/UDP 127.0.0.1:40675;rport;branch=z9hG4bK7rmHHX13H1N3e; x-param=Custom";
         let (rest, via) = Via::parse(src).unwrap();
         println!("Via={:?}", via);
+        assert!(rest.is_empty());
     }
 }
