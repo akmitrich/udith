@@ -3,6 +3,7 @@ pub const HTAB: &[u8] = b"\t";
 pub const CRLF: &[u8] = b"\r\n";
 // pub const EMPTY_LINE: &[u8] = b"\r\n\r\n";
 pub const SIP_VERSION: &[u8] = b"SIP/2.0";
+pub const DQUOTE: &[u8] = b"\"";
 
 use nom::{
     bytes::complete::{tag, take_while, take_while1, take_while_m_n},
@@ -136,6 +137,18 @@ pub fn text_utf8_byte(src: &[u8]) -> ParseResult<u8> {
     }
 }
 
+pub fn parse_quoted_string(src: &[u8]) -> ParseResult<String> {
+    nom::combinator::map(
+        tuple((
+            sws,
+            tag(DQUOTE),
+            take_while(|x: u8| !DQUOTE.contains(&x)),
+            tag(DQUOTE),
+        )),
+        |(_, _, bytes, _)| String::from_utf8(bytes.to_vec()).unwrap_or_default(),
+    )(src)
+}
+
 fn next_non_whitespace(src: &[u8]) -> Option<u8> {
     for c in src.iter() {
         if ![0x09, 0x20].contains(c) {
@@ -163,5 +176,12 @@ mod tests {
 
         assert!(token(b"").is_err());
         assert!(token(b"#SIPrules!").is_err());
+    }
+
+    #[test]
+    fn lws_works() {
+        assert_eq!(0x20, lws(b" ").unwrap().1);
+        assert_eq!(0x20, lws(b"\t").unwrap().1);
+        assert_eq!(0x20, lws(b" \r\n\t ").unwrap().1);
     }
 }

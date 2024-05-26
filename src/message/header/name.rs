@@ -9,18 +9,16 @@ pub struct Name {
 impl Name {
     pub fn parse(src: &[u8]) -> IResult<&[u8], Option<Self>> {
         if let Ok((_, _)) = nom::bytes::complete::tag::<_, _, ()>(CRLF)(src) {
-            return Ok((src, None));
-        }
-        nom::branch::alt((
-            nom::combinator::map(nom::bytes::complete::tag(CRLF), |_| None),
+            Ok((src, None))
+        } else {
             nom::combinator::map(token, |x: &[u8]| {
                 std::str::from_utf8(x)
                     .map(|s| Name {
                         inner: s.to_owned(),
                     })
                     .ok()
-            }),
-        ))(src)
+            })(src)
+        }
     }
 }
 

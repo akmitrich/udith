@@ -1,5 +1,5 @@
 use super::{sent_by::SentBy, sent_protocol::SentProtocol, via_param::ViaParam};
-use crate::parse_utils::{lws, semi, ParseResult};
+use crate::parse_utils::{lws, ParseResult};
 use nom::sequence::tuple;
 
 #[derive(Debug)]

@@ -1,11 +1,14 @@
+mod display_name;
+mod param;
 mod spec;
 
-use nom::IResult;
+use self::{param::Param, spec::Spec};
+use crate::parse_utils::ParseResult;
 
 #[derive(Debug)]
 pub struct Address {
-    pub spec: String,
-    pub params: Vec<String>,
+    pub spec: Spec,
+    pub params: Vec<Param>,
 }
 
 impl TryFrom<Box<[u8]>> for Address {
@@ -19,18 +22,25 @@ impl TryFrom<Box<[u8]>> for Address {
 }
 
 impl Address {
-    pub fn parse(src: &[u8]) -> IResult<&[u8], Self> {
+    pub fn parse(src: &[u8]) -> ParseResult<Self> {
         // spec =  (name-addr / addr-spec ) *( SEMI param )
-        println!(
-            "Not implemented for: {:?}",
-            std::str::from_utf8(src).unwrap()
-        );
-        todo!()
+        nom::combinator::map(
+            nom::sequence::tuple((Spec::parse, nom::multi::many0(Param::parse))),
+            |(spec, params)| Self { spec, params },
+        )(src)
     }
 }
 
 impl ToString for Address {
     fn to_string(&self) -> String {
-        format!("{};{}", self.spec, self.params.join(";"))
+        format!(
+            "{};{}",
+            self.spec.to_string(),
+            self.params
+                .iter()
+                .map(|p| p.to_string())
+                .collect::<Vec<_>>()
+                .join(";")
+        )
     }
 }
