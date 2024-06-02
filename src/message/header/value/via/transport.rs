@@ -29,3 +29,18 @@ impl Transport {
         )(src)
     }
 }
+
+impl ToString for Transport {
+    fn to_string(&self) -> String {
+        format!(
+            "{}",
+            match self {
+                Transport::Udp => "UDP",
+                Transport::Tcp => "TCP",
+                Transport::Tls => "TLS",
+                Transport::Sctp => "SCTP",
+                Transport::Other(transport) => transport.as_str(),
+            }
+        )
+    }
+}

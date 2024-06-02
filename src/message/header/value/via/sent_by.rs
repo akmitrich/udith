@@ -22,3 +22,13 @@ impl SentBy {
         )(src)
     }
 }
+
+impl ToString for SentBy {
+    fn to_string(&self) -> String {
+        format!(
+            "{}{}",
+            self.host,
+            self.port.map(|p| format!(":{}", p)).unwrap_or_default()
+        )
+    }
+}

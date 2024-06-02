@@ -21,6 +21,16 @@ impl Via {
     }
 }
 
+impl ToString for Via {
+    fn to_string(&self) -> String {
+        self.inner
+            .iter()
+            .map(|p| p.to_string())
+            .collect::<Vec<_>>()
+            .join(",")
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

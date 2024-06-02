@@ -54,6 +54,16 @@ pub fn equal(src: &[u8]) -> ParseResult<u8> {
     nom::combinator::map(tuple((sws, tag(b"=" as &[u8]), sws)), |_| 0x3d)(src)
 }
 
+pub fn raquot(src: &[u8]) -> ParseResult<u8> {
+    // RAQUOT  =  ">" SWS
+    nom::combinator::map(tuple((tag(b">"), sws)), |_| 0x3e)(src)
+}
+
+pub fn laquot(src: &[u8]) -> ParseResult<u8> {
+    // LAQUOT  =  SWS "<"
+    nom::combinator::map(tuple((sws, tag(b"<"))), |_| 0x3c)(src)
+}
+
 pub fn token(src: &[u8]) -> ParseResult<&[u8]> {
     // 1*(alphanum / "-" / "." / "!" / "%" / "*" / "_" / "+" / "`" / "'" / "~" )
     take_while1(|x: u8| x.is_ascii_alphanumeric() || b"-.!%*_+`'~".contains(&x))(src)
@@ -94,7 +104,7 @@ pub fn parse_host(src: &[u8]) -> ParseResult<String> {
     // hexseq         =  hex4 *( ":" hex4)
     // hex4           =  1*4HEXDIG
     nom::combinator::map(
-        take_while(|x: u8| !b":;?".contains(&x) && x.is_ascii_graphic()),
+        take_while(|x: u8| !b":;?()[]<>".contains(&x) && x.is_ascii_graphic()),
         |host| std::str::from_utf8(host).unwrap().to_owned(),
     )(src)
 }

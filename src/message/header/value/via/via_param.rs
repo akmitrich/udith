@@ -28,6 +28,21 @@ impl ViaParam {
     }
 }
 
+impl ToString for ViaParam {
+    fn to_string(&self) -> String {
+        format!(
+            "{}",
+            match self {
+                ViaParam::Ttl(ttl) => format!("ttl={}", ttl),
+                ViaParam::Maddr(host) => format!("maddr={}", host),
+                ViaParam::Received(addr) => format!("received={}", addr),
+                ViaParam::Branch(token) => format!("branch={}", token),
+                ViaParam::Extension(param) => param.to_string(),
+            }
+        )
+    }
+}
+
 fn parse_ttl(src: &[u8]) -> ParseResult<ViaParam> {
     nom::combinator::map(tuple((tag(b"ttl"), equal, parse_u8())), |(_, _, ttl)| {
         ViaParam::Ttl(ttl)

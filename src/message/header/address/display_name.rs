@@ -1,4 +1,4 @@
-use crate::parse_utils::{lws, parse_quoted_string, sws, token, ParseResult};
+use crate::parse_utils::{lws, parse_quoted_string, token, ParseResult};
 
 #[derive(Debug)]
 pub enum DisplayName {

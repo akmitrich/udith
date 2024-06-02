@@ -187,4 +187,14 @@ mod tests {
             unreachable!()
         };
     }
+
+    #[test]
+    fn sip_raquot_works() {
+        let raw = b"sip:john@some.one>";
+        let (rest, uri) = Uri::parse(raw).unwrap();
+        assert_eq!(b">", rest);
+        if let Uri::Sip(uri) = uri {
+            assert_eq!("john", uri.userinfo.as_ref().unwrap().user);
+        }
+    }
 }

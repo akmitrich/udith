@@ -44,3 +44,16 @@ impl ToString for Address {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        let raw = b"Some One John <sip:john@some.one>";
+        let (rest, addr) = Address::parse(raw).unwrap();
+        println!("addr={:?}", addr);
+        assert!(rest.is_empty());
+    }
+}

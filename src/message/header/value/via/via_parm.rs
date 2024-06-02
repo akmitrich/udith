@@ -26,3 +26,18 @@ impl ViaParm {
         )(src)
     }
 }
+
+impl ToString for ViaParm {
+    fn to_string(&self) -> String {
+        format!(
+            "{} {}; {}",
+            self.sent_protocol.to_string(),
+            self.sent_by.to_string(),
+            self.params
+                .iter()
+                .map(|p| p.to_string())
+                .collect::<Vec<_>>()
+                .join(";")
+        )
+    }
+}

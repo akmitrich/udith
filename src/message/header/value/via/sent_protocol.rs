@@ -31,6 +31,17 @@ impl SentProtocol {
     }
 }
 
+impl ToString for SentProtocol {
+    fn to_string(&self) -> String {
+        format!(
+            "{}/{}/{}",
+            self.name.to_string(),
+            String::from_utf8(self.version.to_vec()).unwrap(),
+            self.transport.to_string()
+        )
+    }
+}
+
 #[derive(Debug)]
 pub enum ProtocolName {
     Sip,
@@ -43,5 +54,17 @@ impl ProtocolName {
             SIP => Self::Sip,
             protocol => Self::Protocol(std::str::from_utf8(protocol).unwrap().to_owned()),
         })(src)
+    }
+}
+
+impl ToString for ProtocolName {
+    fn to_string(&self) -> String {
+        format!(
+            "{}",
+            match self {
+                ProtocolName::Sip => "SIP",
+                ProtocolName::Protocol(name) => name.as_str(),
+            }
+        )
     }
 }

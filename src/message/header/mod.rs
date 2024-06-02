@@ -2,13 +2,11 @@ mod address;
 mod map;
 mod name;
 mod value;
-mod via;
 
 pub use address::*;
 pub use map::Map;
 pub use name::*;
 pub use value::*;
-pub use via::*;
 
 use crate::parse_utils::{hcolon, ParseResult, CRLF};
 
@@ -25,9 +23,9 @@ impl Header {
         let (rest, header) = if let Some(name) = name {
             let (rest, _) = hcolon(remainder)?;
             let (rest, value) = Value::parse_with_name(&name, rest)?;
+            println!("parsed value {:?} for name {:?}", value, name);
             (rest, Some(Self { name, value }))
         } else {
-            println!("Found empty line. {:?}", std::str::from_utf8(remainder));
             (remainder, None)
         };
         let (rest, _) = nom::bytes::complete::tag(CRLF)(rest)?;

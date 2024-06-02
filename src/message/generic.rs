@@ -50,6 +50,19 @@ impl GenericParam {
     }
 }
 
+impl ToString for GenericParam {
+    fn to_string(&self) -> String {
+        format!(
+            "{}{}",
+            self.name,
+            self.value
+                .as_ref()
+                .map(|v| format!("={}", v.to_string()))
+                .unwrap_or_default()
+        )
+    }
+}
+
 #[derive(Debug)]
 pub enum GenValue {
     Token(String),
@@ -62,5 +75,15 @@ impl GenValue {
         nom::combinator::map(token, |x| {
             Self::Token(String::from_utf8(x.to_vec()).unwrap())
         })(src)
+    }
+}
+
+impl ToString for GenValue {
+    fn to_string(&self) -> String {
+        match self {
+            GenValue::Token(token) => token.to_string(),
+            GenValue::Host(host) => host.to_string(),
+            GenValue::Quoted(quoted) => format!("\"{}\"", quoted),
+        }
     }
 }

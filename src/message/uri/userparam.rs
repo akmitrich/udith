@@ -1,4 +1,4 @@
-use nom::{branch::alt, bytes::complete::tag, combinator::map, sequence::tuple, IResult};
+use nom::{branch::alt, bytes::complete::tag, combinator::map, IResult};
 
 use crate::parse_utils::token;
 

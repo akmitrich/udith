@@ -1,13 +1,16 @@
-use super::{Address, Via};
+mod via;
+
+use super::Address;
 use crate::{
     message::Method,
-    parse_utils::{lws, parse_usize, text_utf8_byte, word, CRLF},
+    parse_utils::{lws, parse_usize, text_utf8_byte, word},
 };
 use nom::{
     bytes::complete::{tag, take_while1},
     sequence::tuple,
     IResult, ParseTo,
 };
+use via::Via;
 
 pub enum Value {
     Via(Via),
@@ -52,7 +55,7 @@ impl TryFrom<&Value> for String {
 
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
-            Value::Via(via) => Err(()),
+            Value::Via(_via) => Err(()),
             Value::To(address) | Value::From(address) => Ok(address.to_string()),
             Value::CSeq { num, method } => Ok(format!("{} {}", num, method.to_string())),
             Value::CallId(id) => std::str::from_utf8(id)
