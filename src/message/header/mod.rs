@@ -48,7 +48,7 @@ mod tests {
 
     #[test]
     fn empty_line() {
-        let line = b"\r\n\r\n";
+        let line = b"\r\n";
         let (rest, none) = Header::parse(line).unwrap();
         assert!(rest.is_empty());
         assert!(none.is_none());

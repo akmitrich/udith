@@ -1,22 +1,33 @@
+mod tag_param;
 mod via;
 
 use super::Address;
 use crate::{
     message::Method,
-    parse_utils::{lws, parse_usize, text_utf8_byte, word},
+    parse_utils::{lws, parse_usize, semi, text_utf8_byte, word},
 };
 use nom::{
     bytes::complete::{tag, take_while1},
     sequence::tuple,
     IResult, ParseTo,
 };
+use tag_param::TagParam;
 use via::Via;
 
 pub enum Value {
     Via(Via),
-    To(Address),
-    From(Address),
-    CSeq { num: u32, method: Method },
+    To {
+        address: Address,
+        params: Vec<TagParam>,
+    },
+    From {
+        address: Address,
+        params: Vec<TagParam>,
+    },
+    CSeq {
+        num: u32,
+        method: Method,
+    },
     CallId(Box<[u8]>),
     MaxForwards(usize),
     ContentLength(usize),
@@ -30,17 +41,20 @@ impl Value {
                 let (rest, via) = Via::parse(src)?;
                 Ok((rest, Self::Via(via)))
             }
-            to_or_from @ ("to" | "t" | "from" | "f") => {
-                let (rest, address) = Address::parse(src)?;
-                Ok((
-                    rest,
-                    if to_or_from.starts_with('t') {
-                        Self::To(address)
+            to_or_from @ ("to" | "t" | "from" | "f") => nom::combinator::map(
+                tuple((
+                    Address::parse,
+                    nom::multi::many0(tuple((semi, TagParam::parse))),
+                )),
+                |(address, params)| {
+                    let params = params.into_iter().map(|(_, p)| p).collect();
+                    if to_or_from.starts_with("t") {
+                        Self::To { address, params }
                     } else {
-                        Self::From(address)
-                    },
-                ))
-            }
+                        Self::From { address, params }
+                    }
+                },
+            )(src),
             "cseq" => Self::parse_cseq(src),
             "call-id" | "i" => Self::parse_call_id(src),
             "max-forwards" => Self::parse_max_forwards(src),
@@ -56,7 +70,22 @@ impl TryFrom<&Value> for String {
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Via(_via) => Err(()),
-            Value::To(address) | Value::From(address) => Ok(address.to_string()),
+            Value::To { address, params } | Value::From { address, params } => Ok(format!(
+                "{}{}",
+                address.to_string(),
+                if params.is_empty() {
+                    String::new()
+                } else {
+                    format!(
+                        ";{}",
+                        params
+                            .iter()
+                            .map(ToString::to_string)
+                            .collect::<Vec<_>>()
+                            .join(";")
+                    )
+                }
+            )),
             Value::CSeq { num, method } => Ok(format!("{} {}", num, method.to_string())),
             Value::CallId(id) => std::str::from_utf8(id)
                 .map(ToOwned::to_owned)
@@ -88,7 +117,9 @@ impl std::fmt::Debug for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Via(via) => write!(f, "{:?}", via),
-            Self::To(address) | Self::From(address) => write!(f, "{:?}", address),
+            Self::To { address, params } | Self::From { address, params } => {
+                write!(f, "{:?}{:?}", address, params)
+            }
             Self::CSeq { num, method } => write!(f, "{} {:?}", num, method),
             Self::CallId(id) => write!(f, "{}", std::str::from_utf8(id).unwrap_or("BAD ID")),
             Self::MaxForwards(n) | Self::ContentLength(n) => write!(f, "{}", n),

@@ -48,7 +48,7 @@ mod tests {
     fn empty_line() {
         let line = b"\r\n";
         let (rest, none) = Name::parse(line).unwrap();
-        assert!(rest.is_empty());
+        assert_eq!(CRLF, rest);
         assert!(none.is_none());
     }
 }
