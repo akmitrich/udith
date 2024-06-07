@@ -23,7 +23,6 @@ impl Header {
         let (rest, header) = if let Some(name) = name {
             let (rest, _) = hcolon(remainder)?;
             let (rest, value) = Value::parse_with_name(&name, rest)?;
-            println!("parsed value {:?} for name {:?}", value, name);
             (rest, Some(Self { name, value }))
         } else {
             (remainder, None)

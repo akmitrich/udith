@@ -18,7 +18,6 @@ impl Map {
         let mut rest = src;
         loop {
             let (remainder, header) = Header::parse(rest)?;
-            println!("Parsed: {:?}", header);
             rest = remainder;
             let Some(header) = header else { break };
             let name = header.name.to_string().to_lowercase();

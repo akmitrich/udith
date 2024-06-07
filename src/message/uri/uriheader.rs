@@ -49,11 +49,6 @@ pub fn parse_headers(src: &[u8]) -> IResult<&[u8], Vec<UriHeader>> {
         },
     )(rest)?;
     parsed_headers.extend(headers);
-    println!(
-        "->> parsed headers: {:?} ({})",
-        parsed_headers,
-        std::str::from_utf8(rest).unwrap()
-    );
     Ok((rest, parsed_headers))
 }
 
